@@ -21,34 +21,76 @@ Meteor.startup(() => {
   if ( !Gathered.findOne({}) ) {
     const data = [
 			{
-					task: "fish",
-					item: "Talfin",
-					exp: 0
+				skill: "Fishing",
+				task: "Fish",
+				item: "Talfin",
+				exp: 0
 			},
 			{
-					task: "fish",
-					item: "Soppa",
-					exp: 100
+				skill: "Fishing",
+				task: "Fish",
+				item: "Soppa",
+				exp: 100
 			},
 			{
-					task: "fish",
-					item: "Quali",
-					exp: 1000
+				skill: "Fishing",
+				task: "Fish",
+				item: "Quali",
+				exp: 1000
 			},
 			{
-					task: "farm",
-					item: "Potatoe",
-					exp: 0
+				skill: "Farming",
+				task: "Farm",
+				item: "Potatoe",
+				exp: 0
 			},
 			{
-					task: "farm",
-					item: "Apple",
-					exp: 100
+				skill: "Farming",
+				task: "Farm",
+				item: "Apple",
+				exp: 100
 			},
 			{
-					task: "farm",
-					item: "Orange",
-					exp: 1000
+				skill: "Farming",
+				task: "Farm",
+				item: "Orange",
+				exp: 1000
+			},
+			{
+				skill: "Mining",
+				task: "Mine",
+				item: "Bronze",
+				exp: 0
+			},
+			{
+				skill: "Mining",
+				task: "Mine",
+				item: "Copper",
+				exp: 100
+			},
+			{
+				skill: "Mining",
+				task: "Mine",
+				item: "Silver",
+				exp: 1000
+			},
+			{
+				skill: "Logging",
+				task: "Chop",
+				item: "Beech",
+				exp: 0
+			},
+			{
+				skill: "Logging",
+				task: "Chop",
+				item: "Ash",
+				exp: 100
+			},
+			{
+				skill: "Logging",
+				task: "Chop",
+				item: "Oak",
+				exp: 1000
 			}
 		]
     data.forEach((job) => {

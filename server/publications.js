@@ -1,6 +1,10 @@
 // server-side collections
 Workers = new Meteor.Collection("workers");
 
+Meteor.publish("gathered", function () {
+	return Gathered.find({ });
+});
+
 Meteor.publish("inventory", function () {
 	return Inventory.find({ owner: this.userId });
 });

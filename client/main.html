@@ -44,8 +44,15 @@
   <div id='full' class='gathering flex'>
       <div class='box'>
           {{> menu}}
+          {{#each gathers}}{{> gather}}{{/each}}
       </div>
   </div>
+</template>
+
+<template name='gather'>
+<div class="gather">
+{{task}} {{item}} {{exp}}
+</div>
 </template>
 
 <template name='production'>

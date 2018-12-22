@@ -13,6 +13,17 @@ import '../imports/api/globals.js';
 import '../imports/api/methods.js';
 import './management/main.js';
 
+Template.gathering.helpers({
+	gathers(){
+		return Gathered.find();
+	}
+});
+
+Template.gathering.events({
+	'click .gather'() {
+	}
+});
+
 Template.menu.helpers({
 	menu() {
 		const data = [
