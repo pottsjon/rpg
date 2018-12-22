@@ -10,3 +10,6 @@ formatTimer = function(secs) {
     const finalHours = ( secHours >= 1 ? secHours%60+":" : "" );
     return finalHours+finalMinutes+finalSecs;
 };
+
+test = function(hi) {
+}
