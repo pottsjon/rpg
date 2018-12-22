@@ -1,0 +1,65 @@
+<head>
+  <title>rpg</title>
+  <link href="//cdn.materialdesignicons.com/3.2.89/css/materialdesignicons.min.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+  {{> sAlert}}
+</body>
+
+<template name='menu'>
+  <div id="menu">
+    {{#each menu}}<div class="button menu{{class}}">{{text}}</div>{{/each}}
+  </div>
+</template>
+
+<template name='loading'>
+  <div id='loading' class='flex'>
+    <div class='loading'>
+    <span>Loading</span>
+    </div>
+  </div>
+</template>
+  
+<template name='login'>
+  <div id='full' class='flex'>
+    <div id='login' class='box'>
+      <div class='logo'></div>
+      {{#if showReturning}}
+      <input class='loginUsername' type='username' name='username' placeholder='Username'>
+      <input class='loginEmail' type='email' name='email' placeholder='Email'>
+      <input class='loginPassword' type='password' name='password' placeholder='Password'>
+      <div class='button round-sm noselect signIn'>Sign In</div>
+      <div class='button round-sm noselect forgotPassword'>Forgot Password</div>
+      <div class='button round-sm noselect notReturning'>Back</div>
+      {{else}}
+      <div class='button round-sm noselect signIn'>Returning User</div>
+      <div class='button round-sm noselect createAccount'>New User</div>
+      {{/if}}
+    </div>
+  </div>
+</template>
+
+<template name='gathering'>
+  <div id='full' class='gathering flex'>
+      <div class='box'>
+          {{> menu}}
+      </div>
+  </div>
+</template>
+
+<template name='production'>
+  <div id='full' class='production flex'>
+      <div class='box'>
+          {{> menu}}
+      </div>
+  </div>
+</template>
+
+<template name='traveling'>
+    <div id='full' class='traveling flex'>
+        <div class='box'>
+            {{> menu}}
+        </div>
+    </div>
+  </template>
