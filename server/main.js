@@ -18,26 +18,8 @@ Meteor.users.deny({
 });
 
 Meteor.startup(() => {
-  if ( !Gathered.findOne({}) ) {
+	if ( !Tasks.findOne({}) ) {
     const data = [
-			{
-				skill: "Fishing",
-				task: "Fish",
-				item: "Talfin",
-				exp: 0
-			},
-			{
-				skill: "Fishing",
-				task: "Fish",
-				item: "Soppa",
-				exp: 100
-			},
-			{
-				skill: "Fishing",
-				task: "Fish",
-				item: "Quali",
-				exp: 1000
-			},
 			{
 				skill: "Farming",
 				task: "Farm",
@@ -94,13 +76,7 @@ Meteor.startup(() => {
 			}
 		]
     data.forEach((job) => {
-			Gathered.insert({
-				task: job.task,
-				item: job.item,
-				exp: job.exp,
-			});
+			Tasks.insert(job);
 		});
-	}
-  if ( !Produced.findOne({}) ) {
 	}
 });

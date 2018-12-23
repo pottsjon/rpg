@@ -15,12 +15,17 @@ import './management/main.js';
 
 Template.gathering.helpers({
 	gathers(){
-		return Gathered.find();
+		return Tasks.find();
 	}
 });
 
 Template.gathering.events({
 	'click .gather'() {
+		const user_skills = Meteor.user().skills
+		const skill_name = this.skill.toLowerCase();
+		const current_skill = (	!user_skills || !user_skills[skill_name] ? 0 : user_skills[skill_name].exp );
+		if ( current_skill >= this.exp )
+		Meteor.call('startTask',this._id);
 	}
 });
 
