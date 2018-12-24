@@ -12,6 +12,7 @@ Meteor.methods({
 				length: 60
 			}
 			Queues.update({"$and": [
+				{ owner: this.userId },
 				{ started: { $exists: true } },
 				{ completed: { $exists: false } }
 			]},{ $set: { completed: time_now } });
