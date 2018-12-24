@@ -44,7 +44,9 @@
   <div id='full' class='gathering flex'>
       <div class='box'>
           {{> menu}}
+          <div class="headline">Skills</div>
           {{#each skills}}{{> skill}}{{/each}}
+          <div class="headline">Inventory</div>
           {{#each inventory}}{{> item}}{{/each}}
           {{#each queues}}{{> queue}}{{/each}}
           {{#each tasks}}{{> task}}{{/each}}
@@ -60,14 +62,14 @@
 
 <template name='item'>
   <div class="item">
-      <span class="name">{{item}}</span><span class="amount">{{amount}}</span>
+      <span class="name">{{item.name}}</span><span class="amount">{{amount}}</span>
   </div>
 </template>
 
 <template name='queue'>
   <div class="queue">
       <div class="text">
-        {{task.item}} {{task.skill}}
+        {{task.item.name}} {{task.skill}}
       </div>
     <div class="progress" style="width:{{progress}}%"></div>
   </div>
@@ -75,7 +77,7 @@
 
 <template name='task'>
   <div class="task noselect">
-    <span class="name">{{task}} {{item}}</span><span class="amount">Exp Req: {{exp}}</span>
+    <span class="name">{{task}} {{item.name}}</span><span class="amount">Exp Req: {{item.exp}}</span>
   </div>
 </template>
 

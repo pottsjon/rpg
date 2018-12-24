@@ -45,7 +45,6 @@ Template.queue.helpers({
         let rolls = Math.floor(time_lapsed/queue_length);
 		let time_left = queue_length-(time_lapsed-(queue_length*rolls));
 		let progress = ( !this.started ? 0 : 100-((time_left/queue_length)*100) );
-		console.log(Template.instance());
 		return progress;
 	}
 });
@@ -69,7 +68,7 @@ Template.gathering.events({
 	'click .task'() {
 		const user_skill = Skills.findOne({ name: this.skill },{ fields: { amount: 1 } });
 		const skill_amount = ( !user_skill || !user_skill.amount ? 0 : user_skill.amount );
-		if ( skill_amount >= this.exp )
+		if ( skill_amount >= this.item.exp )
 		Meteor.call('startTask',this._id);
 	}
 });

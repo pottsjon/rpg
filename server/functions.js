@@ -14,28 +14,28 @@ var queueInt = [];
 startQueue = function (queue) {
     try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
     queueInt[queue.owner+queue.worker] = Meteor.setInterval(function() {
-        awardQueue(queue,1)
+        awardQueue(queue)
     }, 1000*queue.length);
 };
 
-awardQueue = function (queue,rolls) {
-    let roll_total = 0;
-    for ( i = 0; rolls > i; i++ ) {
-        let roll_amount = Math.floor(Math.random()*5-(-1));
-        roll_total = roll_total-(-roll_amount);
-    }
+invUpdate = function (owner,item,roll) {
     Inventory.update({ "$and": [
-        { owner: queue.owner },
-        { item: queue.task.item }
+        { owner: owner },
+        { item: item }
     ]},{
         $inc: {
-            amount: roll_total
+            amount: roll
         }
     },{ upsert: true });
+};
+
+awardQueue = function (queue) {
+    let roll_amount = Math.floor(Math.random()*5-(-1));
+    invUpdate(queue.owner,queue.task.item,roll_amount);
     Skills.update({ "$and": [
         { owner: queue.owner },
         { name: queue.task.skill }
-    ]},{ $inc: { amount: roll_total*10 } },{ upsert: true });
+    ]},{ $inc: { amount: roll_amount*10 } },{ upsert: true });
 };
 
 awardQueues = function () {
@@ -51,7 +51,7 @@ awardQueues = function () {
         const rolls = Math.floor(time_lapsed/queue_length);
         const timeout_length = queue_length-(time_lapsed-(queue_length*rolls));
         Meteor.setTimeout(function() {
-            awardQueue(queue,1)
+            awardQueue(queue)
             startQueue(queue);
         }, timeout_length);
     });
@@ -83,56 +83,47 @@ checkTasks = function () {
 			{
 				skill: "Farming",
 				task: "Farm",
-				item: "Potato",
-				exp: 0
+				item: { name: "Potato", skill: "Farming", type: "Food", exp: 0 }
 			},
 			{
 				skill: "Farming",
 				task: "Farm",
-				item: "Apple",
-				exp: 100
+				item: { name: "Apple", skill: "Farming", type: "Food", exp: 100 }
 			},
 			{
 				skill: "Farming",
 				task: "Farm",
-				item: "Orange",
-				exp: 1000
+				item: { name: "Orange", skill: "Farming", type: "Food", exp: 1000 }
 			},
 			{
 				skill: "Mining",
 				task: "Mine",
-				item: "Bronze",
-				exp: 0
+				item: { name: "Bronze", skill: "Mining", type: "Metal", exp: 0 }
 			},
 			{
 				skill: "Mining",
 				task: "Mine",
-				item: "Copper",
-				exp: 100
+				item: { name: "Copper", skill: "Mining", type: "Metal", exp: 100 }
 			},
 			{
 				skill: "Mining",
 				task: "Mine",
-				item: "Silver",
-				exp: 1000
+				item: { name: "Silver", skill: "Mining", type: "Metal", exp: 1000 }
 			},
 			{
 				skill: "Logging",
 				task: "Chop",
-				item: "Beech",
-				exp: 0
+				item: { name: "Beech", skill: "Logging", type: "Wood", exp: 0 }
 			},
 			{
 				skill: "Logging",
 				task: "Chop",
-				item: "Ash",
-				exp: 100
+				item: { name: "Ash", skill: "Logging", type: "Wood", exp: 100 }
 			},
 			{
 				skill: "Logging",
 				task: "Chop",
-				item: "Oak",
-				exp: 1000
+				item: { name: "Oak", skill: "Logging", type: "Wood", exp: 1000 }
 			}
 		];
         data.forEach((job) => {
