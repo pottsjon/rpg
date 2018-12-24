@@ -26,3 +26,16 @@ img { pointer-events: none; }
 #login .button:hover { background: #6a4423; }
 #login .logo { width: 100%; text-align: center; margin-bottom: 10px; }
 #login .logo img { width: 100%; max-width: 400px; height: auto; }
+
+.skill, .item, .task { padding: 2px; }
+.skill { background: #bee0f9; border-bottom: 1px solid #8bb1ce; color: #326a94; }
+.item { background: #efeded; border-bottom: 1px solid #9e9e9e; color: #585757; }
+.task { cursor: pointer; padding: 5px 2px; font-weight: bold; text-align: center; background: #7bde8c; border-bottom: 1px solid #55bb67; color: #2c843b; }
+.task:hover { background: #3ba54d; border-bottom: 1px solid #2a6f36; color: #caffd3; }
+.skill .amount, .item .amount { float: right; }
+.task .amount { margin-left: 5px; font-size: 12px; font-weight: normal; }
+
+
+.queue { position: relative; height: 30px; background: #777; border-bottom: 1px solid #777; color: #333; }
+.queue .progress { z-index: 10; height: 30px; position: absolute; top: 0; left: 0; background: #b5b5b5; -webkit-transition: width 350ms linear; transition: width 350ms linear; }
+.queue .text { z-index: 20; text-align: center; width: 100%; height: 30px; line-height: 30px; position: absolute; top: 0; left: 0; }

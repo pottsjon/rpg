@@ -12,7 +12,8 @@ workforceAdd = function () {
 
 var queueInt = [];
 startQueue = function (queue) {
-    queueInt[queue._id] = Meteor.setInterval(function() {
+    try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
+    queueInt[queue.owner+queue.worker] = Meteor.setInterval(function() {
         awardQueue(queue,1)
     }, 1000*queue.length);
 };
@@ -31,10 +32,10 @@ awardQueue = function (queue,rolls) {
             amount: roll_total
         }
     },{ upsert: true });
-    let inc_exp = {};
-    const skill_name = 'skills'+queue.task.skill.toLowerCase()+'exp';
-    inc_exp[skill_name] = roll_total*10;
-    Meteor.users.update({ _id: queue.owner },{ $inc: inc_exp });
+    Skills.update({ "$and": [
+        { owner: queue.owner },
+        { name: queue.task.skill }
+    ]},{ $inc: { amount: roll_total*10 } },{ upsert: true });
 };
 
 awardQueues = function () {
@@ -43,11 +44,11 @@ awardQueues = function () {
         { completed: { $exists: false } }
     ]}).fetch();
     queues.forEach((queue) => {
-        try { Meteor.clearInterval(queueInt[queue._id]) } catch (e) { };
+        try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
         const time_now = (new Date()).getTime();
-        const time_lapsed = Math.floor(time_now-queue.started);
+        const time_lapsed = time_now-queue.started;
         const queue_length = queue.length*1000;
-        const rolls = time_lapsed/queue_length;
+        const rolls = Math.floor(time_lapsed/queue_length);
         const timeout_length = queue_length-(time_lapsed-(queue_length*rolls));
         Meteor.setTimeout(function() {
             awardQueue(queue,1)
