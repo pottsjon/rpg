@@ -18,65 +18,6 @@ Meteor.users.deny({
 });
 
 Meteor.startup(() => {
-	if ( !Tasks.findOne({}) ) {
-    const data = [
-			{
-				skill: "Farming",
-				task: "Farm",
-				item: "Potatoe",
-				exp: 0
-			},
-			{
-				skill: "Farming",
-				task: "Farm",
-				item: "Apple",
-				exp: 100
-			},
-			{
-				skill: "Farming",
-				task: "Farm",
-				item: "Orange",
-				exp: 1000
-			},
-			{
-				skill: "Mining",
-				task: "Mine",
-				item: "Bronze",
-				exp: 0
-			},
-			{
-				skill: "Mining",
-				task: "Mine",
-				item: "Copper",
-				exp: 100
-			},
-			{
-				skill: "Mining",
-				task: "Mine",
-				item: "Silver",
-				exp: 1000
-			},
-			{
-				skill: "Logging",
-				task: "Chop",
-				item: "Beech",
-				exp: 0
-			},
-			{
-				skill: "Logging",
-				task: "Chop",
-				item: "Ash",
-				exp: 100
-			},
-			{
-				skill: "Logging",
-				task: "Chop",
-				item: "Oak",
-				exp: 1000
-			}
-		]
-    data.forEach((job) => {
-			Tasks.insert(job);
-		});
-	}
+	checkTasks();
+	awardQueues();
 });

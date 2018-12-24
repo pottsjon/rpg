@@ -14,6 +14,12 @@ import '../imports/api/methods.js';
 import './management/main.js';
 
 Template.gathering.helpers({
+	inventory(){
+		return Inventory.find();
+	},
+	queues(){
+		return Queues.find({ completed: { $exists: false } });
+	},
 	gathers(){
 		return Tasks.find();
 	}
