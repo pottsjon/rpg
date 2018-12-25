@@ -45,7 +45,7 @@ Template.queue.helpers({
         let rolls = Math.floor(time_lapsed/queue_length);
 		let time_left = queue_length-(time_lapsed-(queue_length*rolls));
 		let progress = ( !this.started ? 0 : 100-((time_left/queue_length)*100) );
-		return progress;
+		return "<div class='progress' style='width: "+progress+"%'></div>";
 	}
 });
 
