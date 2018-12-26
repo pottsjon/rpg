@@ -10,3 +10,16 @@ formatTimer = function(secs) {
     const finalHours = ( secHours >= 1 ? secHours%60+":" : "" );
     return finalHours+finalMinutes+finalSecs;
 };
+
+itemLevel = function (exp) {
+    // 243215879437 exp is the end of level 9999
+    let level = 10000;
+	for ( i = 1; 10000 >= i; i++ ) {
+		let level_amount = ((4000*i*(i/1.25))*(-Math.log(4000*i)/Math.log(0.0000000001)));
+		if (  exp <= level_amount ) {
+			level = i
+			break;
+		};
+	}
+	return level;
+}

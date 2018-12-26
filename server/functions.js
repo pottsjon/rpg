@@ -26,16 +26,33 @@ invUpdate = function (owner,item,roll) {
         $inc: {
             amount: roll
         }
-    },{ upsert: true });
+    },{ upsert: true },
+    function(err, count) {
+    });
 };
 
 awardQueue = function (queue) {
-    let roll_amount = Math.floor(Math.random()*5-(-1));
+    const skill_update = Skills.findOne({ "$and": [
+        { owner: queue.owner },
+        { name: queue.task.skill }
+    ]},{ fields: { amount: 1, level: 1 } });
+    const skill_amount = ( !skill_update || !skill_update.amount ? 0 : skill_update.amount );
+    const skill_level = ( !skill_update || !skill_update.level ? 1 : skill_update.level );
+    const roll_amount = Math.floor(Math.random()*(1-(-skill_level))-(-1));
+    const update_amount = skill_amount-(-roll_amount*10);
+    const update_level = itemLevel(update_amount);
     invUpdate(queue.owner,queue.task.item,roll_amount);
     Skills.update({ "$and": [
         { owner: queue.owner },
         { name: queue.task.skill }
-    ]},{ $inc: { amount: roll_amount*10 } },{ upsert: true });
+    ]},{
+        $set: {
+            amount: update_amount,
+            level: update_level
+        }
+    },{ upsert: true },
+    function(err, count) {
+    });
 };
 
 awardQueues = function () {
@@ -73,7 +90,9 @@ clearQueues = function () {
 			$set: {
 				completed: time_now
 			}
-		});
+		},
+        function(err, count) {
+        });
 	});
 };
 

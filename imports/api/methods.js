@@ -10,12 +10,16 @@ Meteor.methods({
 				created: time_now,
 				started: time_now,
 				length: 60
-			}
+			};
 			Queues.update({"$and": [
 				{ owner: this.userId },
 				{ started: { $exists: true } },
 				{ completed: { $exists: false } }
-			]},{ $set: { completed: time_now } });
+			]},{ $set: {
+				completed: time_now
+			} },
+			function(err, count) {
+			});
 			Queues.insert(queue);
 			if ( Meteor.isServer )
 			startQueue(queue);
