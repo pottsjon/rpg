@@ -38,6 +38,7 @@ Deps.autorun(function(c) {
 });
 
 Template.leaderboard.onCreated(function() {
+	console.log("test")
 	var leadersSub = Meteor.subscribe('leaders');
 	this.leaderSkip = new ReactiveVar( 0 );
 });
