@@ -18,14 +18,17 @@ startQueue = function (queue) {
     }, 1000*queue.length);
 };
 
-invUpdate = function (owner,item,roll) {
+invUpdate = function (owner,item,amount,queued) {
+    let inc_amount = { amount: amount };
+    if ( queued ) {
+        inc_amount["runs"] = 1;
+        inc_amount["total"] = amount;
+    };
     Inventory.update({ "$and": [
         { owner: owner },
         { item: item }
     ]},{
-        $inc: {
-            amount: roll
-        }
+        $inc: inc_amount
     },{ upsert: true },
     function(err, count) {
     });
@@ -41,7 +44,7 @@ awardQueue = function (queue) {
     const roll_amount = Math.floor(Math.random()*(1-(-skill_level))-(-1));
     const update_amount = skill_amount-(-roll_amount*10);
     const update_level = itemLevel(update_amount);
-    invUpdate(queue.owner,queue.task.item,roll_amount);
+    invUpdate(queue.owner,queue.task.item,roll_amount,true);
     Skills.update({ "$and": [
         { owner: queue.owner },
         { name: queue.task.skill }

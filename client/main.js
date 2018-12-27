@@ -37,6 +37,45 @@ Deps.autorun(function(c) {
 	} catch (_error) {}
 });
 
+Template.leaderboard.onCreated(function() {
+	var leadersSub = Meteor.subscribe('leaders');
+	this.leaderSkip = new ReactiveVar( 0 );
+});
+
+Template.leaderboard.onDestroyed(function() {
+	try { leadersSub.stop() } catch (e) {};
+});
+
+Template.leaderboard.helpers({
+	leaders(){
+		let skip = Template.instance().leaderSkip.get()*20;
+		return Leaders.find({},
+			{ sort:
+				{ amount: -1 },
+			skip: skip,
+			limit: 20
+			}).map(function(leader, index){
+				leader.rank = (skip)+index-(-1);
+			return leader;
+		});
+	}
+});
+
+Template.leaderboard.events({
+	'click .prev'(e,t) {
+		const skip = t.leaderSkip.get();		
+		if ( skip >= 1 ) {
+			t.leaderSkip.set(skip-1);
+			subSkip("leaders", skip-1);
+		};
+	},
+	'click .next'(e,t) {
+		const skip = t.leaderSkip.get();
+		t.leaderSkip.set(skip-(-1));
+		subSkip("leaders", skip-(-1));
+	}
+});
+
 Template.queue.helpers({
 	progress(){
 		timeDep.depend();
@@ -91,6 +130,10 @@ Template.menu.helpers({
 			{
 				text: "Travel",
 				route: '/traveling'
+			},
+			{
+				text: "Leaderboard",
+				route: '/leaderboard'
 			},
 		]
 		return data

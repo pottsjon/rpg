@@ -18,6 +18,8 @@ img { pointer-events: none; }
 
 .s-alert-error { background: #111; color: #fff; }
 
+.half { width: 50%; display: inline-block; box-sizing: border-box; }
+
 #full { height: 100%; background: #ccc; }
 
 #login.box { width: 100%; max-width: 400px; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }
@@ -33,9 +35,11 @@ img { pointer-events: none; }
 .skill, .item { background: #efeded; border-bottom: 1px solid #9e9e9e; color: #585757; }
 .task { cursor: pointer; padding: 5px 2px; font-weight: bold; text-align: center; background: #7bde8c; border-bottom: 1px solid #55bb67; color: #2c843b; }
 .task:hover { background: #3ba54d; border-bottom: 1px solid #2a6f36; color: #caffd3; }
-.skill .amount, .item .amount { float: right; }
+.skill .amount, .item .amount, .leader .amount { float: right; }
 .task .amount { margin-left: 5px; font-size: 12px; font-weight: normal; }
 
+.leader { background: #b7b7b7; border-bottom: 1px solid #ababab; color: #4a4a4a; padding: 2px; }
+.leader .name { display: inline-block; }
 
 .queue { position: relative; height: 30px; background: #777; border-bottom: 1px solid #777; color: #333; }
 .queue .progress { z-index: 10; height: 30px; position: absolute; top: 0; left: 0; background: #b5b5b5; -webkit-transition: width 350ms linear; transition: width 350ms linear; }

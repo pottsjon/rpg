@@ -96,3 +96,21 @@
         </div>
     </div>
   </template>
+
+  <template name='leaderboard'>
+      <div id='full' class='leaderboard flex'>
+          <div class='box'>
+              {{> menu}}
+              <div class="button half noselect prev">Prev</div><div class="button half noselect next">Next</div>
+              {{#each leaders}}
+                <div class="leader">
+                  <div class="name">
+                    <span class="rank">{{rank}}</span>
+                    <span>{{name}}</span>
+                  </div>
+                  <div class="amount">{{amount}}</div>
+                </div>
+              {{/each}}
+          </div>
+      </div>
+    </template>

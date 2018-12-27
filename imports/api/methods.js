@@ -9,7 +9,7 @@ Meteor.methods({
 				worker: this.userId,
 				created: time_now,
 				started: time_now,
-				length: 60
+				length: 30
 			};
 			Queues.update({"$and": [
 				{ owner: this.userId },

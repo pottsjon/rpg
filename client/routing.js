@@ -45,3 +45,12 @@ Router.route('/traveling', {
 		this.render('traveling');
 	}
 });
+
+Router.route('/leaderboard', {
+	waitOn: function() {
+        return [];
+	},
+	action: function(){
+		this.render('leaderboard');
+	}
+});
