@@ -23,9 +23,3 @@ itemLevel = function (exp) {
 	}
 	return level;
 }
-
-subSkip = function(sub,skip) {
-	let subName = [sub+"Sub"];
-	try { subName.stop() } catch (e) {};
-	subName = Meteor.subscribe(sub, skip);
-};

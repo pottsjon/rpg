@@ -56,20 +56,20 @@
 
 <template name='skill'>
 <div class="skill">
-    <span class="name">{{name}}</span><span class="amount">{{amount}} ({{level}})</span>
+    <span class="name">{{name}}</span><span class="amount">{{toNumbers amount}} ({{level}})</span>
   </div>
 </template>
 
 <template name='item'>
-  <div class="item">
-      <span class="name">{{item.name}}</span><span class="amount">{{amount}}</span>
+  <div class="item {{toLowerCase item.rarity}}">
+      <span class="name">{{item.name}}</span><span class="amount">{{toNumbers amount}}</span>
   </div>
 </template>
 
 <template name='queue'>
   <div class="queue">
       <div class="text">
-        {{task.item.name}} {{task.skill}}
+        {{task.task}}
       </div>
     {{{progress}}}
   </div>
@@ -77,7 +77,7 @@
 
 <template name='task'>
   <div class="task noselect">
-    <span class="name">{{task}} {{item.name}}</span><span class="amount">Exp Req: {{item.exp}}</span>
+    <span class="name">{{task}}</span><span class="amount">Exp Req: {{toNumbers exp}}</span>
   </div>
 </template>
 
@@ -108,7 +108,7 @@
                     <span class="rank">{{rank}}</span>
                     <span>{{name}}</span>
                   </div>
-                  <div class="amount">{{amount}}</div>
+                  <div class="amount">{{toNumbers amount}}</div>
                 </div>
               {{/each}}
           </div>

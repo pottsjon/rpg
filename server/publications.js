@@ -1,12 +1,12 @@
 // server-side collections
 Workers = new Meteor.Collection("workers");
 
-Meteor.publish("tasks", function () {
-	return Tasks.find({});
+Meteor.publish("items", function () {
+	return Items.find({});
 });
 
-Meteor.publish("inventory", function () {
-	return Inventory.find({ owner: this.userId });
+Meteor.publish("tasks", function () {
+	return Tasks.find({});
 });
 
 Meteor.publish("skills", function () {
@@ -57,6 +57,27 @@ Meteor.publish("employees", function () {
 	});
 });
 
+Meteor.publish("inventory", function () {
+	let pub = this;
+    let foundPub = Inventory.find({ owner: this.userId });
+	runningPub = foundPub.observeChanges({
+		added: function(oId, oFields) {
+			oFields.item = Items.findOne({ name: oFields.item });
+			pub.added('inventory', oId, oFields);
+		},
+		changed: function(oId, oFields) {
+			pub.changed('inventory', oId, oFields);
+		},
+		removed: function(oId) {
+			pub.removed('inventory', oId);
+		}
+	});
+	pub.ready();
+	pub.onStop(function () {
+        runningPub.stop();
+	});
+});
+
 Meteor.publish("leaders", function (skip) {
 	let pub = this;
 	let foundPub = Inventory.find({
@@ -76,18 +97,13 @@ Meteor.publish("leaders", function (skip) {
 		disableOplog: true,
 		pollingIntervalMs: 60000,
 		pollingThrottleMs: 60000
-	});
+	});	
 	runningPub = foundPub.observeChanges({
 		added: function(oId,oFields) {
-			const find_user = Meteor.users.findOne({ _id: oFields.owner },{ fields: { username: 1 } });
-			if ( find_user && find_user.username )
-			oFields["name"] = find_user.username;
+			oFields["name"] = Meteor.users.findOne({ _id: oFields.owner },{ fields: { username: 1 } }).username;
 			pub.added('leaders', oId, oFields);
 		},
 		changed: function(oId,oFields) {
-			const find_user = Meteor.users.findOne({ _id: oFields.owner },{ fields: { username: 1 } });
-			if ( find_user && find_user.username )
-			oFields["name"] = find_user.username;
 			pub.changed('leaders', oId, oFields);
 		},
 		removed: function(oId) {

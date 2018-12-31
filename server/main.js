@@ -18,6 +18,8 @@ Meteor.users.deny({
 });
 
 Meteor.startup(() => {
+	Items._ensureIndex({ name: 1 });
 	checkTasks();
+	checkItems();
 	awardQueues();
 });

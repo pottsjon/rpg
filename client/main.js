@@ -9,6 +9,7 @@ import './management/main.html';
 import './trackers.js';
 import './routing.js';
 import './login.js';
+import './helpers.js';
 import '../imports/api/globals.js';
 import '../imports/api/methods.js';
 import './management/main.js';
@@ -37,13 +38,12 @@ Deps.autorun(function(c) {
 	} catch (_error) {}
 });
 
-Template.leaderboard.onCreated(function() {
-	console.log("test")
-	var leadersSub = Meteor.subscribe('leaders');
+Template.leaderboard.onCreated(function () {
+	leadersSub = Meteor.subscribe('leaders');
 	this.leaderSkip = new ReactiveVar( 0 );
 });
 
-Template.leaderboard.onDestroyed(function() {
+Template.leaderboard.onDestroyed(function () {
 	try { leadersSub.stop() } catch (e) {};
 });
 
@@ -53,10 +53,9 @@ Template.leaderboard.helpers({
 		return Leaders.find({},
 			{ sort:
 				{ amount: -1 },
-			skip: skip,
 			limit: 20
-			}).map(function(leader, index){
-				leader.rank = (skip)+index-(-1);
+		}).map(function(leader, index){
+			leader.rank = (skip)+index-(-1);
 			return leader;
 		});
 	}
@@ -67,13 +66,18 @@ Template.leaderboard.events({
 		const skip = t.leaderSkip.get();		
 		if ( skip >= 1 ) {
 			t.leaderSkip.set(skip-1);
-			subSkip("leaders", skip-1);
+			try { leadersSub.stop() } catch (e) { };
+			leadersSub = Meteor.subscribe("leaders", skip-1);
 		};
 	},
 	'click .next'(e,t) {
+		const count = Leaders.find({}).count();
 		const skip = t.leaderSkip.get();
-		t.leaderSkip.set(skip-(-1));
-		subSkip("leaders", skip-(-1));
+		if ( count > 20 ) {
+			t.leaderSkip.set(skip-(-1));
+			try { leadersSub.stop() } catch (e) { };
+			leadersSub = Meteor.subscribe("leaders", skip-(-1));
+		};
 	}
 });
 
@@ -108,7 +112,7 @@ Template.gathering.events({
 	'click .task'() {
 		const user_skill = Skills.findOne({ name: this.skill },{ fields: { amount: 1 } });
 		const skill_amount = ( !user_skill || !user_skill.amount ? 0 : user_skill.amount );
-		if ( skill_amount >= this.item.exp )
+		if ( skill_amount >= this.exp )
 		Meteor.call('startTask',this._id);
 	}
 });
