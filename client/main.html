@@ -106,6 +106,7 @@
       <div class='box'>
           {{> menu}}
           <div class="headline">Employees</div>
+          {{#each queues}}{{> queue}}{{/each}}
           {{#each employees}}{{> worker}}{{/each}}
           <div class="headline">Prospects</div>
           {{#each prospects}}{{> worker}}{{/each}}

@@ -164,7 +164,7 @@ Template.gathering.helpers({
 		return Inventory.find({},{ sort: { amount: -1 } });
 	},
 	queues(){
-		return Queues.find({ completed: { $exists: false } });
+		return Queues.find({ "$and": [{ worker: Meteor.userId() },{ completed: { $exists: false } }] });
 	},
 	tasks(){
 		return Tasks.find();
@@ -185,6 +185,9 @@ Template.hiring.onCreated(function () {
 });
 
 Template.hiring.helpers({
+	queues(){
+		return Queues.find({ "$and": [{ worker: { $ne: Meteor.userId() } },{ completed: { $exists: false } }] });
+	},
 	employees() {
 		return Employees.find().map(function(emp, index){
 			emp.menu = Template.instance().selectEmployee.get() == emp._id;
@@ -218,10 +221,6 @@ Template.worker.helpers({
 			task.workerId = worker_id;
 			return task;
 		});
-	},
-	menu() {
-		if ( this.menu )
-		return "<div class='menu'><div class='button'>Farm Potato</div></div>";
 	},
 	employee() {
 		return ( this.owner ? "employee" : "prospect" );

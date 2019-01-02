@@ -32,7 +32,7 @@ initQueue = function (queue) {
     });
     queue.awards = queue_awards;
     const skill = Skills.findOne({ "$and": [
-        { owner: queue.owner },
+        { owner: queue.worker },
         { name: task.skill }
     ]},{ fields: { amount: 1, level: 1 } });
     queue.skill = ( !skill ? { amount: 0, level: 1 } : skill );
@@ -101,7 +101,7 @@ awardQueue = function (queue) {
     const update_level = itemLevel(update_amount);
     queueSkill[queue.worker] = update_amount;
     Skills.update({ "$and": [
-        { owner: queue.owner },
+        { owner: queue.worker },
         { name: queue.task.skill }
     ]},{
         $set: {
