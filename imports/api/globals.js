@@ -13,13 +13,11 @@ formatTimer = function(secs) {
 
 itemLevel = function (exp) {
     // 243215879437 exp is the end of level 9999
-    let level = 10000;
-	for ( i = 1; 10000 >= i; i++ ) {
+	for ( let i = 1; 10000000 >= i; i++ ) {
 		let level_amount = ((4000*i*(i/1.25))*(-Math.log(4000*i)/Math.log(0.0000000001)));
 		if (  exp <= level_amount ) {
-			level = i
+			return i
 			break;
 		};
 	}
-	return level;
-}
+};

@@ -29,14 +29,20 @@ img { pointer-events: none; }
 #login .logo { width: 100%; text-align: center; margin-bottom: 10px; }
 #login .logo img { width: 100%; max-width: 400px; height: auto; }
 
+.time { text-align: center; font-size: 11px; }
+
 .skill, .item, .task { padding: 2px; }
 .headline { padding: 0px 2px; background: #195261; color: #52b9d2; font-size: 12px; letter-spacing: 0.3px; }
 /* blue colored .skill { background: #bee0f9; border-bottom: 1px solid #8bb1ce; color: #326a94; } */
-.skill, .item { background: #efeded; border-bottom: 1px solid #9e9e9e; color: #585757; }
+.skill, .item, .log, .worker { background: #efeded; border-bottom: 1px solid #9e9e9e; color: #585757; }
 .task { cursor: pointer; padding: 5px 2px; font-weight: bold; text-align: center; background: #7bde8c; border-bottom: 1px solid #55bb67; color: #2c843b; }
 .task:hover { background: #3ba54d; border-bottom: 1px solid #2a6f36; color: #caffd3; }
 .skill .amount, .item .amount, .leader .amount { float: right; }
 .task .amount { margin-left: 5px; font-size: 12px; font-weight: normal; }
+
+.logs { max-height: 300px; height: 100%; overflow-y: auto; }
+.logs .log { padding: 1px 2px; }
+.logs .log .timestamp { margin-right: 2px; font-size: 11px; font-weight: bold; color: #484848; }
 
 .item .name { font-weight: bold; }
 .item.uncommon .name { color: #1db739; }
@@ -50,3 +56,9 @@ img { pointer-events: none; }
 .queue { position: relative; height: 30px; background: #777; border-bottom: 1px solid #777; color: #333; }
 .queue .progress { z-index: 10; height: 30px; position: absolute; top: 0; left: 0; background: #b5b5b5; -webkit-transition: width 350ms linear; transition: width 350ms linear; }
 .queue .text { z-index: 20; text-align: center; width: 100%; height: 30px; line-height: 30px; position: absolute; top: 0; left: 0; }
+.queue .award.hide { visibility: hidden; }
+.queue .award { visibility: visible; animation-name: rising; animation-timing-function: linear; transform-origin: center bottom; animation-duration: 1s; animation-fill-mode: both; position: absolute; z-index: 100; top: 0; width: 100%; text-align: center; }
+@keyframes rising {0% {top:0px;} 50% {opacity: 1;} 100% {top:-50px; opacity: 0;}}
+
+.worker { cursor: pointer; padding: 1px 2px; }
+.worker.employee { padding: 2px; background: #c2dbe8; }

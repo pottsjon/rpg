@@ -10,21 +10,49 @@ workforceAdd = function () {
     })
 };
 
+var queueSkill = [];
 var queueInt = [];
+var queueTimeout = [];
 startQueue = function (queue) {
     try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
-    let queue_awards = [];
-    queue.task.items.forEach((item) => {
-        let item_data = Items.findOne({ name: item },{ fields: { name: 1, roll: 1 } });
-        queue_awards.push(item_data);
-    });
-    queue.awards = queue_awards;
     queueInt[queue.owner+queue.worker] = Meteor.setInterval(function() {
         awardQueue(queue)
     }, 1000*queue.length);
 };
 
-invUpdate = function (owner,item,amount,queued) {
+initQueue = function (queue) {
+    try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
+    try { Meteor.clearTimeout(queueTimeout[queue.owner+queue.worker]) } catch (e) { };
+    let queue_awards = [];
+	const task = Tasks.findOne({ _id: queue.taskId },{ fields: { exp: 0 } });
+    queue.task = task;
+    task.items.forEach((item) => {
+        let item_data = Items.findOne({ name: item },{ fields: { name: 1, roll: 1 } });
+        queue_awards.push(item_data);
+    });
+    queue.awards = queue_awards;
+    const skill = Skills.findOne({ "$and": [
+        { owner: queue.owner },
+        { name: task.skill }
+    ]},{ fields: { amount: 1, level: 1 } });
+    queue.skill = ( !skill ? { amount: 0, level: 1 } : skill );
+    queueSkill[queue.worker] = ( !skill ? 0 : skill.amount );
+    const time_lapsed = (new Date()).getTime()-queue.started;
+    const queue_length = queue.length*1000;
+    const elapsed_count = Math.floor(time_lapsed/queue_length);
+    if ( elapsed_count >= 1 ) {
+        const timeout_length = queue_length-(time_lapsed-(queue_length*elapsed_count));
+        queueTimeout[queue.owner+queue.worker] = Meteor.setTimeout(function() {
+            awardQueue(queue);
+            initQueue(queue);
+        }, timeout_length);
+    } else {
+        startQueue(queue);
+    };
+};
+
+invUpdate = function (owner,item,amount,updater,skill,queued) {
+    // queued updates are from new items you create
     let inc_amount = { amount: amount };
     if ( queued ) {
         inc_amount["runs"] = 1;
@@ -34,6 +62,11 @@ invUpdate = function (owner,item,amount,queued) {
         { owner: owner },
         { item: item }
     ]},{
+        $set: {
+            updatedAt: (new Date()).getTime(),
+            updatedBy: updater,
+            updatedHow: skill
+        },
         $inc: inc_amount
     },{ upsert: true },
     function(err, count) {
@@ -41,13 +74,8 @@ invUpdate = function (owner,item,amount,queued) {
 };
 
 awardQueue = function (queue) {
-    const skill_update = Skills.findOne({ "$and": [
-        { owner: queue.owner },
-        { name: queue.task.skill }
-    ]},{ fields: { amount: 1, level: 1 } });
-    const skill_amount = ( !skill_update || !skill_update.amount ? 0 : skill_update.amount );
-    const skill_level = ( !skill_update || !skill_update.level ? 1 : skill_update.level );
-    const roll_amount = Math.floor(Math.random()*(1-(-skill_level))-(-1));
+    let worker_skill = queueSkill[queue.worker];
+    const roll_amount = Math.floor(Math.random()*(1-(-queue.skill.level))-(-1));
     if ( queue.task.items.length > 1 ) {
         let award_items = [];
         let item_roll = Math.floor(Math.random()*1000+1);
@@ -59,7 +87,7 @@ awardQueue = function (queue) {
             });
             if ( award_items.length >= 1 ) {                
                 const choose_item = Math.floor(Math.random()*(award_items.length));
-                invUpdate(queue.owner,award_items[choose_item],roll_amount,true);
+                invUpdate(queue.owner,award_items[choose_item],roll_amount,queue.worker,queue.task.skill,true);
             } else {
                 let adjust_roll = ( roll-100 > 599 ) ? roll-100 : 0;
                 awardItems(adjust_roll);
@@ -67,10 +95,11 @@ awardQueue = function (queue) {
         };
         awardItems(item_roll);
     } else {
-        invUpdate(queue.owner,queue.task.items[0],roll_amount,true);
+        invUpdate(queue.owner,queue.task.items[0],roll_amount,queue.worker,queue.task.skill,true);
     }
-    const update_amount = skill_amount-(-roll_amount*10);
+    const update_amount = worker_skill-(-roll_amount*10);
     const update_level = itemLevel(update_amount);
+    queueSkill[queue.worker] = update_amount;
     Skills.update({ "$and": [
         { owner: queue.owner },
         { name: queue.task.skill }
@@ -82,6 +111,8 @@ awardQueue = function (queue) {
     },{ upsert: true },
     function(err, count) {
     });
+    if ( queue.skill.level != update_level )
+    initQueue(queue);
 }
 
 awardQueues = function () {
@@ -90,22 +121,7 @@ awardQueues = function () {
         { completed: { $exists: false } }
     ]}).fetch();
     queues.forEach((queue) => {
-        try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
-        const time_now = (new Date()).getTime();
-        const time_lapsed = time_now-queue.started;
-        const queue_length = queue.length*1000;
-        const elapsed = Math.floor(time_lapsed/queue_length);
-        const timeout_length = queue_length-(time_lapsed-(queue_length*elapsed));
-        let queue_awards = [];
-        queue.task.items.forEach((item) => {
-            let item_data = Items.findOne({ name: item },{ fields: { name: 1, roll: 1 } });
-            queue_awards.push(item_data);
-        });
-        queue.awards = queue_awards;
-        Meteor.setTimeout(function() {
-            awardQueue(queue)
-            startQueue(queue);
-        }, timeout_length);
+        initQueue(queue);
     });
     // clearQueues();
 };
@@ -116,10 +132,9 @@ clearQueues = function () {
 		{ 'status.lastLogin.date': { $lte: new Date(time_now-(1000*60*60*24)) } },
 		{ 'status.online': false }
 	]},{ sort: { 'status.lastLogin.date': 1 } });
-
 	users_away.forEach((user) => {
 		Queues.update({ "$and": [
-			{ owner: user._id },
+            { owner: user._id },
 			{ completed: { $exists: false } }
 		]},{
 			$set: {
@@ -127,6 +142,8 @@ clearQueues = function () {
 			}
 		},
         function(err, count) {
+            try { Meteor.clearInterval(queueInt[user._id+user._id]) } catch (e) { };
+            try { Meteor.clearTimeout(queueTimeout[user._id+user._id]) } catch (e) { };
         });
 	});
 };
@@ -306,7 +323,7 @@ checkItems = function () {
         data.forEach((item) => {
             Items.insert(item);
         });
-		for ( i = 1; 1000 >= i; i++ ) {
+		for ( let i = 1; 1000 >= i; i++ ) {
             Items.insert({
                 skill: "Logging",
                 type: "Wood",

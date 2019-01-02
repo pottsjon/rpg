@@ -8,6 +8,7 @@
 </body>
 
 <template name='menu'>
+  <div class="time">{{time}}</div>
   <div id="menu">
     {{#each menu}}<div class="button menu{{class}}">{{text}}</div>{{/each}}
   </div>
@@ -50,12 +51,21 @@
           {{#each inventory}}{{> item}}{{/each}}
           {{#each queues}}{{> queue}}{{/each}}
           {{#each tasks}}{{> task}}{{/each}}
+          <div class="logs slim">
+          {{#each logs}}{{> log}}{{/each}}
+          </div>
       </div>
   </div>
 </template>
 
+<template name='log'>
+  <div class="log">
+      {{{message}}}
+  </div>
+</template>
+
 <template name='skill'>
-<div class="skill">
+  <div class="skill">
     <span class="name">{{name}}</span><span class="amount">{{toNumbers amount}} ({{level}})</span>
   </div>
 </template>
@@ -68,6 +78,7 @@
 
 <template name='queue'>
   <div class="queue">
+      {{{awarded}}}
       <div class="text">
         {{task.task}}
       </div>
@@ -78,6 +89,27 @@
 <template name='task'>
   <div class="task noselect">
     <span class="name">{{task}}</span><span class="amount">Exp Req: {{toNumbers exp}}</span>
+  </div>
+</template>
+
+<template name='worker'>
+  <div class="worker {{employee}}">
+    <span class="name">{{name}}</span>
+  </div>
+  {{#if menu}}
+    {{#each tasks}}{{> task}}{{/each}}
+  {{/if}}
+</template>
+
+<template name='hiring'>
+  <div id='full' class='hiring flex'>
+      <div class='box'>
+          {{> menu}}
+          <div class="headline">Employees</div>
+          {{#each employees}}{{> worker}}{{/each}}
+          <div class="headline">Prospects</div>
+          {{#each prospects}}{{> worker}}{{/each}}
+      </div>
   </div>
 </template>
 

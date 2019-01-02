@@ -37,6 +37,15 @@ Router.route('/production', {
 	}
 });
 
+Router.route('/hiring', {
+	waitOn: function() {
+        return [];
+	},
+	action: function(){
+		this.render('hiring');
+	}
+});
+
 Router.route('/traveling', {
 	waitOn: function() {
         return [];

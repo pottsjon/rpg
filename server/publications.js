@@ -1,5 +1,5 @@
 // server-side collections
-Workers = new Meteor.Collection("workers");
+sysMsgs = new Meteor.Collection("sysmsgs");
 
 Meteor.publish("items", function () {
 	return Items.find({});
@@ -13,22 +13,40 @@ Meteor.publish("skills", function () {
 	return Skills.find({ owner: this.userId });
 });
 
+queuesPub = [];
 Meteor.publish("queues", function () {
-	return Queues.find({ owner: this.userId });
+	let pub = this;
+    let foundPub = Queues.find({ owner: this.userId });
+	queuesPub[this.userId] = foundPub.observeChanges({
+		added: function(oId, oFields) {
+			oFields.task = Tasks.findOne({ _id: oFields.taskId });
+			pub.added('queues', oId, oFields);
+		},
+		changed: function(oId, oFields) {
+			pub.changed('queues', oId, oFields);
+		},
+		removed: function(oId) {
+			pub.removed('invqueuesentory', oId);
+		}
+	});
+	pub.ready();
+	pub.onStop(function () {
+        queuesPub[this.userId].stop();
+	});
 });
 
-Meteor.publish("prospects", function () {
+Meteor.publish("workers", function () {
 	let pub = this;
     let foundPub = Workers.find({ owner: { $exists: false } });
 	runningPub = foundPub.observeChanges({
 		added: function(oId, oFields) {
-			pub.added('prospects', oId, oFields);
+			pub.added('workers', oId, oFields);
 		},
 		changed: function(oId, oFields) {
-			pub.changed('prospects', oId, oFields);
+			pub.changed('workers', oId, oFields);
 		},
 		removed: function(oId) {
-			pub.removed('prospects', oId);
+			pub.removed('workers', oId);
 		}
 	});
 	pub.ready();
@@ -57,10 +75,11 @@ Meteor.publish("employees", function () {
 	});
 });
 
+inventoryPub = [];
 Meteor.publish("inventory", function () {
 	let pub = this;
     let foundPub = Inventory.find({ owner: this.userId });
-	runningPub = foundPub.observeChanges({
+	inventoryPub[this.userId] = foundPub.observeChanges({
 		added: function(oId, oFields) {
 			oFields.item = Items.findOne({ name: oFields.item });
 			pub.added('inventory', oId, oFields);
@@ -74,7 +93,7 @@ Meteor.publish("inventory", function () {
 	});
 	pub.ready();
 	pub.onStop(function () {
-        runningPub.stop();
+        inventoryPub[this.userId].stop();
 	});
 });
 
@@ -112,6 +131,6 @@ Meteor.publish("leaders", function (skip) {
 	});
 	pub.ready();
 	pub.onStop(function () {
-	runningPub.stop();
+		runningPub.stop();
 	});
 });
