@@ -120,14 +120,14 @@ Template.leaderboard.events({
 
 Template.log.helpers({
 	message(){
-		const updated_by = ( this.updatedBy == Meteor.userId() ? "You" : "Worker" );
+		const updated_by = ( this.updatedBy == Meteor.userId() ? "You" : "A worker" );
 		return "<span class='timestamp'>"+moment(this.updatedAt).format('h:mm:ssa')+"</span> "+updated_by+" found "+this.amount+" "+this.item.name.toLowerCase()+" while "+this.updatedHow.toLowerCase()+".";
 	}
 });
 
 Template.queue.helpers({
 	awarded(){
-		let award = sysMsgs.findOne({ updatedBy: Meteor.userId() },{
+		let award = sysMsgs.findOne({ updatedBy: this.worker },{
 			sort: {
 				updatedAt: -1
 			},
@@ -185,6 +185,9 @@ Template.hiring.onCreated(function () {
 });
 
 Template.hiring.helpers({
+	logs(){
+		return sysMsgs.find({},{ sort: { updatedAt: -1 } });
+	},
 	queues(){
 		return Queues.find({ "$and": [{ worker: { $ne: Meteor.userId() } },{ completed: { $exists: false } }] });
 	},
