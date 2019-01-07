@@ -1,5 +1,6 @@
 Template.login.onCreated(function() {
 	this.returnLogin = new ReactiveVar( false );
+	try { runningInventory.stop() } catch (e) { };
 });
 
 Template.login.helpers({
@@ -28,7 +29,7 @@ Template.login.events({
 	'click .createAccount'(e) {
 		e.preventDefault();	
 		tryCreatingUser = function (selectedUsername) {
-			const user = {
+			let user = {
 				username: selectedUsername,
 				password: Random.id(8)
 			};
@@ -38,7 +39,7 @@ Template.login.events({
 			});
 		}
 		randomUsername = function () {
-			const usernameNominee = Fake.word();
+			let usernameNominee = Fake.word();
 			if ( usernameNominee.length >= 3 && usernameNominee.length <= 10 ) {
 				const selectedUsername = usernameNominee;
 				tryCreatingUser(selectedUsername);
@@ -47,6 +48,8 @@ Template.login.events({
 			};
 		}
 		randomUsername();
+		user = null;
+		usernameNominee = null;
 	},
 	'click .forgotPassword'() {
 		const email = $( '[name="email"]' ).val();

@@ -32,6 +32,7 @@ Meteor.methods({
 			Queues.insert(queue);
 			if ( Meteor.isServer )
 			initQueue(queue);
+			Workers.update({ _id: worker_id },{ $set: { working: time_now } });
 		});
 	}
 });

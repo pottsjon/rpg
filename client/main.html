@@ -8,9 +8,11 @@
 </body>
 
 <template name='menu'>
-  <div class="time">{{time}}</div>
-  <div id="menu">
-    {{#each menu}}<div class="button menu{{class}}">{{text}}</div>{{/each}}
+  <div id="top">
+    <div class="time">{{time}}</div>
+    <div id="menu">
+      {{#each menu}}<div class="button menu{{class}}">{{text}}</div>{{/each}}
+    </div>
   </div>
 </template>
 
@@ -72,7 +74,7 @@
 
 <template name='item'>
   <div class="item {{toLowerCase item.rarity}}">
-      <span class="name">{{item.name}}</span><span class="amount">{{toNumbers amount}}</span>
+      <span class="name">{{item.name.plural}}</span><span class="amount">{{toNumbers amount}}</span>
   </div>
 </template>
 
@@ -93,9 +95,17 @@
 </template>
 
 <template name='worker'>
-  <div class="worker {{employee}}">
+  <div class="worker">
     <span class="name">{{name}}</span>
   </div>
+</template>
+
+<template name='employee'>
+  <div class="worker employee">
+    <span class="name">{{name}}</span>
+  </div>
+  {{#each skills}}{{> skill}}{{/each}}
+  {{#each queues}}{{> queue}}{{/each}}
   {{#if menu}}
     {{#each tasks}}{{> task}}{{/each}}
   {{/if}}
@@ -106,8 +116,7 @@
       <div class='box'>
           {{> menu}}
           <div class="headline">Employees</div>
-          {{#each queues}}{{> queue}}{{/each}}
-          {{#each employees}}{{> worker}}{{/each}}
+          {{#each employees}}{{> employee}}{{/each}}
           <div class="headline">Prospects</div>
           {{#each prospects}}{{> worker}}{{/each}}
           <div class="logs slim">
@@ -129,6 +138,8 @@
     <div id='full' class='traveling flex'>
         <div class='box'>
             {{> menu}}
+            <div id="map">
+            </div>
         </div>
     </div>
   </template>
@@ -144,7 +155,7 @@
                     <span class="rank">{{rank}}</span>
                     <span>{{name}}</span>
                   </div>
-                  <div class="amount">{{toNumbers amount}}</div>
+                  <div class="amount">{{toNumbers total}}</div>
                 </div>
               {{/each}}
           </div>

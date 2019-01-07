@@ -1,13 +1,21 @@
 workforceEvaluate = function () {
-    const workforceCount = Workers.find({ owner: { $exists: false } },{ limit: 10 }).count();
-    if ( workforceCount < 10 )
-    workforceAdd();
+    const workforceCount = Workers.find({ owner: { $exists: false } },{ limit: 20 }).count();
+    if ( workforceCount < 20 )
+    workforceAdd(20-workforceCount);
 };
 
-workforceAdd = function () {
-    Workers.insert({
-        name: Fake.user().fullname,
-    })
+workforceAdd = function (count) {
+    let time_now = (new Date()).getTime();
+    let names = [];
+	for ( let i = 1; count >= i; i++ ) {
+        names.push(Fake.user().fullname);
+    }
+    names.forEach((name) => {
+        Workers.insert({
+            name: name,
+            created: time_now
+        });
+    });
 };
 
 var queueSkill = [];
@@ -27,7 +35,7 @@ initQueue = function (queue) {
 	const task = Tasks.findOne({ _id: queue.taskId },{ fields: { exp: 0 } });
     queue.task = task;
     task.items.forEach((item) => {
-        let item_data = Items.findOne({ name: item },{ fields: { name: 1, roll: 1 } });
+        let item_data = Items.findOne({ 'name.single': item },{ fields: { name: 1, roll: 1 } });
         queue_awards.push(item_data);
     });
     queue.awards = queue_awards;
@@ -49,7 +57,7 @@ initQueue = function (queue) {
     } else {
         startQueue(queue);
     };
-};
+}
 
 invUpdate = function (owner,item,amount,updater,skill,queued) {
     // queued updates are from new items you create
@@ -83,7 +91,7 @@ awardQueue = function (queue) {
         awardItems = function (roll) {
             queue.awards.forEach((item) => {
                 if ( roll >= item.roll && roll-100 <= item.roll )
-                award_items.push(item.name);
+                award_items.push(item.name.single);
             });
             if ( award_items.length >= 1 ) {                
                 const choose_item = Math.floor(Math.random()*(award_items.length));
@@ -100,20 +108,23 @@ awardQueue = function (queue) {
     const update_amount = worker_skill-(-roll_amount*10);
     const update_level = itemLevel(update_amount);
     queueSkill[queue.worker] = update_amount;
+    let skill_set = {
+        amount: update_amount,
+        level: update_level
+    };
+    if ( queue.worker != queue.owner )
+    skill_set["boss"] = queue.owner;
     Skills.update({ "$and": [
         { owner: queue.worker },
         { name: queue.task.skill }
     ]},{
-        $set: {
-            amount: update_amount,
-            level: update_level
-        }
+        $set: skill_set
     },{ upsert: true },
     function(err, count) {
     });
     if ( queue.skill.level != update_level )
     initQueue(queue);
-}
+};
 
 awardQueues = function () {
     const queues = Queues.find({ "$and": [
@@ -123,13 +134,16 @@ awardQueues = function () {
     queues.forEach((queue) => {
         initQueue(queue);
     });
-    // clearQueues();
+    clearQueues();
+    let clearingQueues = Meteor.setInterval(function() {
+        clearQueues();
+    }, 1000*60);
 };
 
 clearQueues = function () {
-	const time_now = (new Date()).getTime();
+    const time_now = (new Date()).getTime();
 	const users_away = Meteor.users.find({ "$and": [
-		{ 'status.lastLogin.date': { $lte: new Date(time_now-(1000*60*60*24)) } },
+		{ 'status.lastLogin.date': { $lte: new Date(time_now-(1000*60*60*4)) } },
 		{ 'status.online': false }
 	]},{ sort: { 'status.lastLogin.date': 1 } });
 	users_away.forEach((user) => {
@@ -139,8 +153,10 @@ clearQueues = function () {
 		]},{
 			$set: {
 				completed: time_now
-			}
-		},
+            }
+        },{
+            multi: true
+        },
         function(err, count) {
             try { Meteor.clearInterval(queueInt[user._id+user._id]) } catch (e) { };
             try { Meteor.clearTimeout(queueTimeout[user._id+user._id]) } catch (e) { };
@@ -173,37 +189,37 @@ checkTasks = function () {
 				skill: "Mining",
                 task: "Mine Bronze",
                 exp: 0,
-                items: ["Bronze", "Yellow Gem", "Green Gem", "Blue Gem", "Red Gem"]
+                items: ["Bronze Ore", "Yellow Gem", "Green Gem", "Blue Gem", "Red Gem"]
 			},
 			{
 				skill: "Mining",
 				task: "Mine Copper",
                 exp: 100,
-                items: ["Copper", "Green Gem"]
+                items: ["Copper Ore", "Green Gem"]
 			},
 			{
 				skill: "Mining",
 				task: "Mine Silver",
                 exp: 1000,
-                items: ["Silver", "Blue Gem"]
+                items: ["Silver Ore", "Blue Gem"]
 			},
 			{
 				skill: "Logging",
                 task: "Chop Beech",
                 exp: 0,
-                items: ["Beech"]
+                items: ["Beech Log"]
 			},
 			{
 				skill: "Logging",
 				task: "Chop Ash",
                 exp: 100,
-                items: ["Ash"]
+                items: ["Ash Log"]
 			},
 			{
 				skill: "Logging",
 				task: "Chop Oak",
                 exp: 1000,
-                items: ["Oak"]
+                items: ["Oak Log"]
 			}
 		];
         data.forEach((job) => {
@@ -219,7 +235,7 @@ checkItems = function () {
                 skill: "Farming",
                 type: "Food",
                 rarity: 'Common',
-                name: "Potato",
+                name: { single: "Potato" , plural: "Potatoes" },
                 roll: 0,
                 level: 1
             },
@@ -227,7 +243,7 @@ checkItems = function () {
                 skill: "Farming",
                 type: "Food",
                 rarity: 'Common',
-                name: "Apple",
+                name: { single: "Apple" , plural: "Apples" },
                 roll: 0,
                 level: 2
             },
@@ -235,7 +251,7 @@ checkItems = function () {
                 skill: "Farming",
                 type: "Food",
                 rarity: 'Common',
-                name: "Orange",
+                name: { single: "Orange" , plural: "Oranges" },
                 roll: 0,
                 level: 3
             },
@@ -243,7 +259,7 @@ checkItems = function () {
                 skill: "Mining",
                 type: "Metal",
                 rarity: 'Common',
-                name: "Bronze",
+                name: { single: "Bronze Ore" , plural: "Bronze Ore" },
                 roll: 0,
                 level: 1
             },
@@ -251,7 +267,7 @@ checkItems = function () {
                 skill: "Mining",
                 type: "Metal",
                 rarity: 'Common',
-                name: "Copper",
+                name: { single: "Copper Ore" , plural: "Copper Ore" },
                 roll: 0,
                 level: 2
             },
@@ -259,7 +275,7 @@ checkItems = function () {
                 skill: "Mining",
                 type: "Metal",
                 rarity: 'Common',
-                name: "Silver",
+                name: { single: "Silver Ore" , plural: "Silver Ore" },
                 roll: 0,
                 level: 3
             },
@@ -267,7 +283,7 @@ checkItems = function () {
                 skill: "Mining",
                 type: "Material",
                 rarity: 'Uncommon',
-                name: "Yellow Gem",
+                name: { single: "Yellow Gem" , plural: "Yellow Gems" },
                 roll: 650,
                 level: 1
             },
@@ -275,7 +291,7 @@ checkItems = function () {
                 skill: "Mining",
                 type: "Material",
                 rarity: 'Rare',
-                name: "Green Gem",
+                name: { single: "Green Gem" , plural: "Green Gems" },
                 roll: 750,
                 level: 2
             },
@@ -283,7 +299,7 @@ checkItems = function () {
                 skill: "Mining",
                 type: "Material",
                 rarity: 'Epic',
-                name: "Blue Gem",
+                name: { single: "Blue Gem" , plural: "Blue Gems" },
                 roll: 850,
                 level: 3
             },
@@ -291,7 +307,7 @@ checkItems = function () {
                 skill: "Mining",
                 type: "Material",
                 rarity: 'Legendary',
-                name: "Red Gem",
+                name: { single: "Red Gem" , plural: "Red Gems" },
                 roll: 950,
                 level: 3
             },
@@ -299,7 +315,7 @@ checkItems = function () {
                 skill: "Logging",
                 type: "Wood",
                 rarity: 'Common',
-                name: "Beech",
+                name: { single: "Beech Log" , plural: "Beech Logs" },
                 roll: 0,
                 level: 1
             },
@@ -307,7 +323,7 @@ checkItems = function () {
                 skill: "Logging",
                 type: "Wood",
                 rarity: 'Common',
-                name: "Ash",
+                name: { single: "Ash Log" , plural: "Ash Logs" },
                 roll: 0,
                 level: 2
             },
@@ -315,7 +331,7 @@ checkItems = function () {
                 skill: "Logging",
                 type: "Wood",
                 rarity: 'Common',
-                name: "Oak",
+                name: { single: "Oak Log" , plural: "Oak Logs" },
                 roll: 0,
                 level: 3
             }
@@ -323,15 +339,5 @@ checkItems = function () {
         data.forEach((item) => {
             Items.insert(item);
         });
-		for ( let i = 1; 1000 >= i; i++ ) {
-            Items.insert({
-                skill: "Logging",
-                type: "Wood",
-                rarity: 'Common',
-                name: Fake.user().fullname,
-                roll: Math.floor(Math.random()*1000+1),
-                level: 1
-            });
-        }
     };
 };

@@ -18,7 +18,12 @@ Meteor.users.deny({
 });
 
 Meteor.startup(() => {
-	Items._ensureIndex({ name: 1 });
+	Tasks._ensureIndex({ _id: 1 });
+	Items._ensureIndex({ 'name.single': 1 });
+	Queues._ensureIndex({ owner: 1 });
+	Workers._ensureIndex({ owner: 1 });
+	Skills._ensureIndex({ boss: 1, owner: 1 });
+	Inventory._ensureIndex({ owner: 1, amount: 1 });
 	checkTasks();
 	checkItems();
 	awardQueues();
