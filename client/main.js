@@ -1,6 +1,7 @@
 import { Template } from 'meteor/templating';
 import { ReactiveVar } from 'meteor/reactive-var';
 import { ReactiveDict } from 'meteor/reactive-dict';
+import { konva } from 'konva';
 
 import '../imports/api/collections.js';
 import './subscriptions.js';
@@ -13,6 +14,7 @@ import './helpers.js';
 import '../imports/api/globals.js';
 import '../imports/api/methods.js';
 import './management/main.js';
+import './map.js';
 
 UI.body.onRendered(function() {
 	Tracker.autorun(function() {
@@ -167,167 +169,6 @@ Template.queue.onCreated(function () {
 Template.queue.onDestroyed(function () {
     try { Meteor.clearTimeout(queueInts[this.data._id]) } catch (e) { };
 });
-
-/*
-windowSize = function () {
-	const width = document.getElementById("map").offsetWidth;
-	const top = document.getElementById("top").offsetHeight;
-	const height = $(window).height()-top;
-	return { width: width, height: height };
-};
-
-var myGamePiece;
-var otherPiece;
-var myObstacles = [];
-var myLoc;
-var myAngle;
-var getAngle = false;
-
-function startGame() {
-	myGamePiece = new component(15, 15, "red", 100, 100);
-	otherPiece = new component(40, 40, "green", 150, 150);
-    myLoc = new component("14px", "Consolas", "black", 20, 20, "text");
-	myLoc.text = "X: 100 Y: 100";
-    myAngle = new component("16px", "Consolas", "black", 20, 40, "text");
-	myGameArea.start();
-}
-
-function stopGame() {
-	myGameArea.clear();
-}
-
-var myGameArea = {
-	canvas : document.createElement("canvas"),
-	start : function() {
-		this.canvas.width = 6000;
-		this.canvas.height = 6000;
-		this.context = this.canvas.getContext("2d");
-		var element = document.getElementById("map");
-		element.appendChild(this.canvas);
-		otherPiece.newPos();
-		otherPiece.update();
-		myGamePiece.newPos();
-		myGamePiece.update();
-		myLoc.update();
-		},
-	clear : function() {
-		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-	}
-}
-
-function component(width, height, color, x, y, type) {
-	this.type = type;
-	this.width = width;
-	this.height = height;
-	this.speedX = 0;
-	this.speedY = 0;    
-	this.x = x;
-	this.y = y;
-	this.gravity = 0;
-	this.gravitySpeed = 0;
-	this.interval = Meteor.setInterval(updateGameArea, 20);
-	this.update = function() {
-		ctx = myGameArea.context;
-		if (this.type == "text") {
-			ctx.font = this.width + " " + this.height;
-			ctx.fillStyle = color;
-			ctx.fillText(this.text, this.x, this.y);
-		} else {
-			ctx.beginPath()
-			ctx.arc(this.x, this.y, this.width, 0, 2 * Math.PI, false);
-			ctx.fillStyle = color;
-			ctx.fill();
-			ctx.lineWidth = 2;
-			ctx.strokeStyle = '#333333';
-			ctx.stroke();
-		}
-	}
-	this.newPos = function() {
-		this.x += this.speedX;
-		this.y += this.speedY; 
-	}
-	this.hitBottom = function() {
-		var rockbottom = myGameArea.canvas.height - this.height;
-		if (this.y > rockbottom) {
-			this.y = rockbottom;
-			this.gravitySpeed = 0;
-		}
-	}
-	this.crashWith = function(otherobj) {
-		var myleft = this.x;
-		var myright = this.x + (this.width);
-		var mytop = this.y;
-		var mybottom = this.y + (this.height);
-		var otherleft = otherobj.x;
-		var otherright = otherobj.x + (otherobj.width);
-		var othertop = otherobj.y;
-		var otherbottom = otherobj.y + (otherobj.height);
-		var crash = true;
-		if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
-			crash = false;
-		}
-		return crash;
-	}
-}
-
-function updateGameArea() {
-	myGameArea.clear();
-	myAngle.text = "Angle: " + getAngle;
-	if ( getAngle )
-	myAngle.update();
-	myLoc.text = "X: "+myGamePiece.x+" Y: "+myGamePiece.y;
-	myLoc.update();
-	otherPiece.newPos();
-	otherPiece.update();
-	myGamePiece.newPos();
-	myGamePiece.update();
-}
-
-function everyinterval(n) {
-	if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
-	return false;
-}
-
-function accelerate(n) {
-	myGamePiece.gravity = n;
-}
-
-function angle(cx, cy, ex, ey) {
-	var dy = ey - cy;
-	var dx = ex - cx;
-	var theta = Math.atan2(dy, dx); // range (-PI, PI]
-	theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
-	//if (theta < 0) theta = 360 + theta; // range [0, 360)
-	return theta;
-}
-
-Template.traveling.onRendered(function () {
-	Tracker.autorun(function() {
-	  $(window).resize(function() {
-	  });
-	});
-	startGame();
-});
-
-Template.traveling.events({
-	'mousemove canvas'(e) {
-		getAngle = numeral(angle(myGamePiece.x,myGamePiece.y,e.offsetX,e.offsetY)).format('0');
-	},
-	'click canvas'(e) {
-		myGamePiece.speedX += 1;	
-		myGamePiece.speedY += 1;
-	},
-	'click .stop'() {
-		stopGame();
-	},
-	'mousedown .accelerate'() {
-		accelerate(-0.2);
-	},
-	'mouseup .accelerate'() {
-		accelerate(0.5);
-	}
-});
-*/
 
 Template.gathering.helpers({
 	logs(){

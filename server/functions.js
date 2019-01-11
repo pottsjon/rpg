@@ -137,16 +137,20 @@ awardQueues = function () {
     clearQueues();
     let clearingQueues = Meteor.setInterval(function() {
         clearQueues();
-    }, 1000*60);
+    }, 1000*60*60);
 };
 
 clearQueues = function () {
     const time_now = (new Date()).getTime();
 	const users_away = Meteor.users.find({ "$and": [
-		{ 'status.lastLogin.date': { $lte: new Date(time_now-(1000*60*60*4)) } },
+		{ 'status.logout': { $lte: new Date(time_now-(1000*60*60*4)) } },
 		{ 'status.online': false }
-	]},{ sort: { 'status.lastLogin.date': 1 } });
+	]});
 	users_away.forEach((user) => {
+		const find_queues = Queues.find({ "$and": [
+            { owner: user._id },
+			{ completed: { $exists: false } }
+		]},{ fields: { owner: 1, worker: 1 } }).fetch();
 		Queues.update({ "$and": [
             { owner: user._id },
 			{ completed: { $exists: false } }
@@ -158,8 +162,10 @@ clearQueues = function () {
             multi: true
         },
         function(err, count) {
-            try { Meteor.clearInterval(queueInt[user._id+user._id]) } catch (e) { };
-            try { Meteor.clearTimeout(queueTimeout[user._id+user._id]) } catch (e) { };
+        });
+        find_queues.forEach((queue) => {
+            try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
+            try { Meteor.clearTimeout(queueTimeout[queue.owner+queue.worker]) } catch (e) { };
         });
 	});
 };

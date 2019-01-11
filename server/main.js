@@ -27,4 +27,11 @@ Meteor.startup(() => {
 	checkTasks();
 	checkItems();
 	awardQueues();
+	UserStatus.events.on("connectionLogout", function(fields) {
+		Meteor.users.update({ _id: fields.userId },{
+			$set: {
+				'status.logout': (new Date()).getTime()
+			}
+		});
+	});
 });
