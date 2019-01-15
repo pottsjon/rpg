@@ -170,6 +170,39 @@ clearQueues = function () {
 	});
 };
 
+checkCities = function () {
+	if ( !Cities.findOne({}) ) {
+        let data = [];
+        // for ( let i = 750; map_size.height-750 >= i; i+=600 ) {
+            // for ( let o = 750; map_size.width-750 >= o; o+=600 ) {
+        for ( let i = 100; map_size.height-100 >= i; i+=200 ) {
+            for ( let o = 100; map_size.width-100 >= o; o+=200 ) {
+                // const chance = Math.floor(Math.random()*100-1);
+                const chance = 51;
+                if ( chance > 50 ) {
+                    const offset_o = Math.floor(Math.random()*250);
+                    const offset_i = Math.floor(Math.random()*250);
+                    data.push({
+                        /*
+                        x: o+offset_o,
+                        y: i+offset_i,
+                        radius: Math.floor(Math.random()*250+100),
+                        */
+                        x: o,
+                        y: i,
+                        radius: 75,
+                        fill: 'red',
+                        name: Fake.user().surname
+                    });
+                };
+            }
+        }
+        data.forEach((city) => {
+			Cities.insert(city);
+        });
+    };
+};
+
 checkTasks = function () {
 	if ( !Tasks.findOne({}) ) {
         const data = [

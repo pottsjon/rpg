@@ -1,8 +1,16 @@
 // server-side collections
 sysMsgs = new Meteor.Collection("sysmsgs");
 
+Meteor.publish("positions", function () {
+	return Positions.find({ owner: this.userId });
+});
+
 Meteor.publish("items", function () {
 	return Items.find({});
+});
+
+Meteor.publish("cities", function () {
+	return Cities.find({});
 });
 
 Meteor.publish("tasks", function () {

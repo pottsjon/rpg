@@ -7,6 +7,7 @@ import './crons.js';
 import './functions.js';
 
 Accounts.onCreateUser(function(options, user) {
+	startingCity(user._id)
 	return user;
 });
 
@@ -18,12 +19,14 @@ Meteor.users.deny({
 });
 
 Meteor.startup(() => {
+	Cities._ensureIndex({ x: 1, y: 1 });
 	Tasks._ensureIndex({ _id: 1 });
 	Items._ensureIndex({ 'name.single': 1 });
 	Queues._ensureIndex({ owner: 1 });
 	Workers._ensureIndex({ owner: 1 });
 	Skills._ensureIndex({ boss: 1, owner: 1 });
 	Inventory._ensureIndex({ owner: 1, amount: 1 });
+	checkCities();
 	checkTasks();
 	checkItems();
 	awardQueues();

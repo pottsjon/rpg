@@ -6,3 +6,4 @@ mup.js
 mup.json
 settings.json
 package-lock.json
+/.deploy/

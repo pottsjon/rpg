@@ -1,3 +1,5 @@
+map_size = { width: 3000, height: 3000 };
+
 formatTimer = function(secs) {
     "use strict";
     // returns seconds in 00:00:00 (up to 86400 seconds)
@@ -20,4 +22,15 @@ itemLevel = function (exp) {
 			break;
 		};
 	}
+};
+
+startingCity = function (userId) {
+    // let city_list = Cities.find({}).fetch();
+    Positions.insert({
+        owner: userId,
+        x: 100,
+        y: 100,
+        city: 'Setantion',
+        visiting: true
+    });
 };

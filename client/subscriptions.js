@@ -13,3 +13,5 @@ Meteor.subscribe('skills', Meteor.userId());
 Meteor.subscribe('inventory');
 Meteor.subscribe('queues');
 Meteor.subscribe('sysmsgs');
+Meteor.subscribe('cities');
+Meteor.subscribe('positions');
