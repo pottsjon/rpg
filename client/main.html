@@ -138,6 +138,11 @@
     <div id='full' class='traveling flex'>
         <div class='box'>
             {{> menu}}
+            <div class="cities">
+              {{#each cities}}
+                <div class="city"><span class="name">{{name}}</span><span>{{time}}</span></div>
+              {{/each}}
+            </div>
             <div id="map">
             </div>
         </div>

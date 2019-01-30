@@ -173,24 +173,17 @@ clearQueues = function () {
 checkCities = function () {
 	if ( !Cities.findOne({}) ) {
         let data = [];
-        // for ( let i = 750; map_size.height-750 >= i; i+=600 ) {
-            // for ( let o = 750; map_size.width-750 >= o; o+=600 ) {
-        for ( let i = 100; map_size.height-100 >= i; i+=200 ) {
-            for ( let o = 100; map_size.width-100 >= o; o+=200 ) {
-                // const chance = Math.floor(Math.random()*100-1);
-                const chance = 51;
+        for ( let i = 200; map_size.height-400 >= i; i+=850 ) {
+            for ( let o = 200; map_size.width-400 >= o; o+=850 ) {
+                const chance = Math.floor(Math.random()*100-1);
                 if ( chance > 50 ) {
-                    const offset_o = Math.floor(Math.random()*250);
-                    const offset_i = Math.floor(Math.random()*250);
+                    const radius = Math.floor(Math.random()*200)+100;
+                    const offset_o = Math.floor(Math.random()*radius);
+                    const offset_i = Math.floor(Math.random()*radius);
                     data.push({
-                        /*
                         x: o+offset_o,
                         y: i+offset_i,
-                        radius: Math.floor(Math.random()*250+100),
-                        */
-                        x: o,
-                        y: i,
-                        radius: 75,
+                        radius: radius*1,
                         fill: 'red',
                         name: Fake.user().surname
                     });
@@ -201,6 +194,30 @@ checkCities = function () {
 			Cities.insert(city);
         });
     };
+    /*
+    // used during city creation process to determine if any cities were touching with a little extra bias
+    const find_cities = Cities.find({});
+    let found_cities = [];
+    find_cities.forEach((city) => {
+        let cities = Cities.findOne({ "$and": [
+            { name: { $ne: city.name } },
+            { "$and": [
+                { "$and": [
+                    { x: { $gte: city.x-(city.radius*2) } },
+                    { x: { $lte: city.x+(city.radius*2) } },
+                ] },
+                { "$and": [
+                    { y: { $gte: city.y-(city.radius*2) } },
+                    { y: { $lte: city.y+(city.radius*2) } }
+                ] },
+            ] },
+        ] });
+        if ( cities )
+        found_cities.push(city);
+    });
+    console.log(found_cities)
+    console.log(found_cities.length)
+    */
 };
 
 checkTasks = function () {

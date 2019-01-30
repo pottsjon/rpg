@@ -1,5 +1,6 @@
 // server-side collections
 sysMsgs = new Meteor.Collection("sysmsgs");
+hitCities = new Meteor.Collection("hitcities");
 
 Meteor.publish("positions", function () {
 	return Positions.find({ owner: this.userId });

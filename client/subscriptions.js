@@ -4,6 +4,7 @@ Employees = new Meteor.Collection("employees");
 
 // client-side only collections
 sysMsgs = new Meteor.Collection(null);
+hitCities = new Meteor.Collection(null);
 
 Meteor.subscribe('tasks');
 Meteor.subscribe('items');
@@ -13,5 +14,6 @@ Meteor.subscribe('skills', Meteor.userId());
 Meteor.subscribe('inventory');
 Meteor.subscribe('queues');
 Meteor.subscribe('sysmsgs');
+Meteor.subscribe('hitcities');
 Meteor.subscribe('cities');
 Meteor.subscribe('positions');

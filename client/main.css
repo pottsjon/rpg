@@ -21,7 +21,7 @@ img { pointer-events: none; }
 .half { width: 50%; display: inline-block; box-sizing: border-box; }
 
 #full { height: 100%; background: #ccc; }
-#full .box { height: 100%; }
+#full .box { width: 100%; max-width: 500px; height: 100%; position: relative; }
 /*
     turned off for test
 #full .box { margin: auto; }
@@ -69,4 +69,6 @@ img { pointer-events: none; }
 .worker { cursor: pointer; padding: 1px 2px; }
 .worker.employee { padding: 2px; background: #c2dbe8; }
 
-#map { width: 100%; max-width: 500px; overflow: hidden; }
+.cities { position: absolute; top: 50px; right: 10px; z-index: 100; }
+.cities .city span { display: inline-block; }
+.cities .city .name { width: 100px; }

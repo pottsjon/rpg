@@ -5,6 +5,7 @@ import '../imports/api/globals.js';
 import './publications.js';
 import './crons.js';
 import './functions.js';
+import collide from 'line-circle-collision';
 
 Accounts.onCreateUser(function(options, user) {
 	startingCity(user._id)
