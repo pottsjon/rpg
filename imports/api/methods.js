@@ -5,9 +5,8 @@ Meteor.methods({
 		if ( position.angle ) {
 			const time_int = (time_now-position.started)/1000;
 			const int_dist = time_int*5;
-			position.x = int_dist*Math.cos(position.angle)+position.x;
-			position.y = int_dist*Math.sin(position.angle)+position.y;
-			console.log(position.x+" "+position.y);
+			position.x = fixEdge(int_dist*Math.cos(position.angle)+position.x, map_size.width);
+			position.y = fixEdge(int_dist*Math.sin(position.angle)+position.y, map_size.height);
 		};
 		Positions.update({ _id: position._id },{
 			$set: {
@@ -18,19 +17,32 @@ Meteor.methods({
 				started: time_now
 			}
 		});
+		return { 
+			x: position.x,
+			y: position.y,
+			started: time_now
+		};
 	},
 	'stopMovement': function() {
-		Positions.update({ owner: this.userId },{
-			$set: {
-				x: 1155,
-				y: 262,
-			},
-			$unset: {
-				angle: "",
-				angleDeg: "",
-				started: ""
-			}
-		});
+		const time_now = (new Date()).getTime();
+		let position = Positions.findOne({ owner: this.userId });
+		if ( position.angle ) {
+			const time_int = (time_now-position.started)/1000;
+			const int_dist = time_int*5;
+			position.x = fixEdge(int_dist*Math.cos(position.angle)+position.x, map_size.width);
+			position.y = fixEdge(int_dist*Math.sin(position.angle)+position.y, map_size.height);
+			Positions.update({ owner: this.userId },{
+				$set: {
+					x: position.x,
+					y: position.y,
+				},
+				$unset: {
+					angle: "",
+					angleDeg: "",
+					started: ""
+				}
+			});
+		};
 	},
 	'hireWorker': function(workerId) {
 		Workers.update({ "$and": [

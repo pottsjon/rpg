@@ -69,6 +69,6 @@ img { pointer-events: none; }
 .worker { cursor: pointer; padding: 1px 2px; }
 .worker.employee { padding: 2px; background: #c2dbe8; }
 
-.cities { position: absolute; top: 50px; right: 10px; z-index: 100; }
+.cities { position: absolute; top: 50px; right: 10px; z-index: 100; background: rgba(17, 17, 17, 0.5); color: #efefef; padding: 2px; }
 .cities .city span { display: inline-block; }
-.cities .city .name { width: 100px; }
+.cities .city .name { width: 100px; overflow: hidden; margin-right: 5px; }

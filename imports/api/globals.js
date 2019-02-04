@@ -9,10 +9,11 @@ formatTimer = function(secs) {
     const secHours = Math.floor(secs / 60 / 60);
     const minute = (secMinutes%60)+":";
     const minutes = ("0"+(secMinutes%60)).slice(-2)+":";
-    const finalSecs = ( secs >= 10 ? ("0"+(secs%60)).slice(-2) : secs%60 );
-    const finalMinutes = ( secHours >= 1 ? minutes : minute );
-    const finalHours = ( secHours >= 1 ? secHours%60+":" : "" );
-    return finalHours+finalMinutes+finalSecs;
+    const finalSecs = ( secMinutes >= 1 || secs < 10 ? ("0"+(secs%60)).slice(-2) : secs%60 );
+    const finalMinutes = ( secHours >= 1 || minutes >= 10 ? minutes : minute );
+	const finalHours = ( secHours >= 1 ? secHours%60+":" : "" );
+	if ( secs >= 0 )
+	return finalHours+finalMinutes+finalSecs;
 };
 
 itemLevel = function (exp) {
@@ -37,23 +38,28 @@ startingCity = function (userId) {
     });
 };
 
-findHitCities = function (position,angle,angleDeg) {
+fixEdge = function (point,size) {
+	return point-(Math.floor(point/size)*size);
+}
+
+findHitCities = function (position) {
 	let hit_cities = [];
-	let line_number = 0;
-	let find_lines = findNextLines({ x: position.x, y: position.y }, angle, angleDeg);
+	let offset = 0;
+	let find_lines = findNextLines({ x: position.x, y: position.y }, position.angle, position.angleDeg);
 	find_lines.forEach((line) => {
 		Cities.find().fetch().forEach((city) => {
 			let circle = [city.x, city.y],
 			radius = city.radius,
 			a = [line[0].x, line[0].y],
 			b = [line[1].x, line[1].y];
-			if ( collide(a, b, circle, radius*1) ) {
+			let nearest = {};
+			if ( collide(a, b, circle, radius*1, nearest ) ) {
 				let distance = distanceOf({ x: line[0].x, y: line[0].y },{ x: city.x, y: city.y });
-				distance = Math.round(line_number*6000+distance)-city.radius;
-				hit_cities.push({ name: city.name, distance: distance, time: Math.round(distance/5) });
+				let real_dist = distance-radius+offset;
+				hit_cities.push({ name: city.name, distance: real_dist, time: Math.round(real_dist/5) });
 			};
 		});
-		line_number++;
+		offset = offset+distanceOf({ x: line[0].x, y: line[0].y },{ x: line[1].x, y: line[1].y });
 	});
 	return hit_cities;
 }
@@ -110,11 +116,11 @@ findLinePoints = function (start, angle, angleDeg) {
 	let second_x = {};
 	let second_y = {};
 	if ( closest_end.x == 0 || closest_end.x == map_size.width ) {
-		second_x = ( closest_end.x == 0 ? 6000 : 0 );
+		second_x = ( closest_end.x == 0 ? map_size.width : 0 );
 		second_y = closest_end.y;
 	} else {
 		second_x = closest_end.x;
-		second_y = ( closest_end.y == 0 ? 6000 : 0 );
+		second_y = ( closest_end.y == 0 ? map_size.height : 0 );
 	};
 	const next_point_start = { x: second_x, y: second_y };
 	const points = [ { x: start.x, y: start.y }, closest_end, next_point_start ];
@@ -128,7 +134,7 @@ findNextLines = function (start, angle, angleDeg) {
 		count++
 		const point = findLinePoints({ x: start.x, y: start.y }, angle, angleDeg);
 		lines.push(point);
-		if ( count < 10 )
+		if ( count < 3 )
 		findLine({ x: point[2].x, y: point[2].y }, angle, angleDeg);
 	}
 	findLine(start, angle, angleDeg);

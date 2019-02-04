@@ -139,14 +139,16 @@
         <div class='box'>
             {{> menu}}
             <div class="cities">
-              {{#each cities}}
-                <div class="city"><span class="name">{{name}}</span><span>{{time}}</span></div>
-              {{/each}}
+              {{#each cities}}{{> city}}{{/each}}
             </div>
             <div id="map">
             </div>
         </div>
     </div>
+  </template>
+
+  <template name='city'>
+    <div class="city"><span class="name">{{name}}</span><span>{{time}}</span></div>
   </template>
 
   <template name='leaderboard'>

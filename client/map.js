@@ -23,31 +23,58 @@ Template.traveling.onRendered(function () {
 	});
 });
 
+Template.traveling.onDestroyed(function () {
+    gameStarted = false;
+});
+
 Template.traveling.helpers({
     cities(){
-        return hitCities.find({ distance: { $gt: 0 } },{ sort: { distance: 1 }, limit: 6 });
-    },
-    time(){
-        // formatTimer(this.time);
-        return this.time
+        return hitCities.find({ distance: { $gt: 0 } },{ sort: { distance: 1 }, limit: 10 });
     }
 });
 
-var kbd = {};
-var position = { x: 0, y: 0, started: false };
+cityInts = [];
+queueTimer = function (queueId,tick,t) {
+	cityInts[queueId] = Meteor.setInterval(function() {
+        tick = tick-1;
+		t.cityInt.set(tick);
+	}, 1000);
+};
+
+Template.city.onCreated(function () {
+    this.cityInt = new ReactiveVar( 0 );
+    try { Meteor.clearTimeout(cityInts[this.data.name]) } catch (e) { };
+    Template.instance().cityInt.set(this.data.time);
+    queueTimer(this.data.name,this.data.time,Template.instance());
+});
+
+Template.city.onDestroyed(function () {
+    try { Meteor.clearTimeout(cityInts[this.data.name]) } catch (e) { };
+});
+
+Template.city.helpers({
+    time(){
+        let progress = Template.instance().cityInt.get();
+        return formatTimer(progress);
+    }
+});
+
+var position = { x: 0, y: 0, started: false, angle: false };
 // game size must be larger than the window size
 function startGame(found_cities, found_position) {
     let clicked = false;
     let time_passed = 0;
-    let time_now = TimeSync.serverTime( (new Date()).getTime() );
-    console.log("Start "+time_now)
+    let client_start = (new Date()).getTime();
+    let server_time = TimeSync.serverTime( client_start );
+
+    position = found_position;
+    let start_pos = { x: position.x, y: position.y };
+    
     let stage = new Konva.Stage({
         container: 'map',
         width: window_size.width,
         height: window_size.height
     });
-    position = { x: found_position.x, y: found_position.y, started: found_position.started };
-    let start_pos = { x: position.x, y: position.x };
     
     let box_group = new Konva.Group();
 
@@ -176,73 +203,59 @@ function startGame(found_cities, found_position) {
     // clones the cities on the left, right, top, bottom and corners, within the screen width, then places them on opposing sides.
     const city_list = cities.getChildren();
     city_list.forEach((city) => {
-        if ( city.attrs.x <= window_size.width+(city.attrs.radius*2) ) {
-            let clone = city.clone({
-                x: city.attrs.x+map_size.width
-            });
+        let radius = city.attrs.radius*2;
+        let cityX = city.attrs.x;
+        let cityY = city.attrs.y;
+        let winW = window_size.width;
+        let winH = window_size.height;
+        let mapW = map_size.width;
+        let mapH = map_size.height;
+        let clone = false;
+        
+        if ( cityX <= winW+radius && cityY <= winH+radius ) {
+            clone = city.clone({ x: cityX+mapW, y: cityY+mapH });
             cities.add(clone);
             clone.cache();
         };
-        if ( city.attrs.x >= map_size.width-window_size.width-(city.attrs.radius*2) ) {
-            let clone = city.clone({
-                x: city.attrs.x-map_size.width
-            });
+        if ( cityX <= winW+radius && cityY >= mapH-winH-radius ) {
+            clone = city.clone({ x: cityX+mapW, y: cityY-mapH });
             cities.add(clone);
             clone.cache();
         };
-        if ( city.attrs.y <= window_size.height+(city.attrs.radius*2) ) {
-            let clone = city.clone({
-                y: city.attrs.y+map_size.height
-            });
+        if ( cityX <= winW+radius && cityY > winH+radius && cityY < mapH-winH-radius ) {
+            clone = city.clone({ x: cityX+mapW });
             cities.add(clone);
             clone.cache();
         };
-        if ( city.attrs.y >= map_size.height-window_size.height-(city.attrs.radius*2) ) {
-            let clone = city.clone({
-                y: city.attrs.y-map_size.height
-            });
+        if ( cityX >= mapW-winW-radius && cityY >= mapH-winH-radius ) {
+            clone = city.clone({ x: cityX-mapW, y: cityY-mapH });
             cities.add(clone);
             clone.cache();
         };
-        if ( city.attrs.x >= map_size.width-window_size.width-(city.attrs.radius*2) && city.attrs.y >= map_size.height-window_size.height-(city.attrs.radius*2) ) {
-            let clone = city.clone({
-                x: city.attrs.x-map_size.width,
-                y: city.attrs.y-map_size.height
-            });
+        if ( cityX >= mapW-winW-radius && cityY <= winH+radius ) {
+            clone = city.clone({ x: cityX-mapW, y: cityY+mapH });
             cities.add(clone);
             clone.cache();
         };
-        if ( city.attrs.x <= window_size.width+(city.attrs.radius*2) && city.attrs.y <= window_size.height+(city.attrs.radius*2) ) {
-            let clone = city.clone({
-                x: city.attrs.x+map_size.width,
-                y: city.attrs.y+map_size.height
-            });
+        if ( cityX >= mapW-winW-radius && cityY < mapH-winH-radius && cityY > winH+radius ) {
+            clone = city.clone({ x: cityX-mapW });
             cities.add(clone);
             clone.cache();
         };
-        if ( city.attrs.x >= map_size.width-window_size.width-(city.attrs.radius*2) && city.attrs.y <= window_size.height+(city.attrs.radius*2) ) {
-            let clone = city.clone({
-                x: city.attrs.x-map_size.width,
-                y: city.attrs.y+map_size.height
-            });
+        if ( cityY <= winH+radius ) {
+            clone = city.clone({ y: cityY+mapH });
             cities.add(clone);
             clone.cache();
         };
-        if ( city.attrs.x <= window_size.width+(city.attrs.radius*2) && city.attrs.y >= map_size.height-window_size.height-(city.attrs.radius*2) ) {
-            let clone = city.clone({
-                x: city.attrs.x+map_size.width,
-                y: city.attrs.y-map_size.height
-            });
+        if ( cityY >= mapH-winH-radius ) {
+            clone = city.clone({ y: cityY-mapH });
             cities.add(clone);
             clone.cache();
         };
     });
 
     function update(frame) {
-        // at 1, this is 60 points moved per second
-        let move_speed = 0.10;
-
-        let find_angle = ( !kbd.angleDeg ? "" : 'A: '+Math.round(kbd.angleDeg)+'°' );
+        let find_angle = ( !position.angleDeg ? "" : 'A: '+Math.round(position.angleDeg)+'°' );
         textX.text('X: '+Math.round(position.x));
         textY.text('Y: '+Math.round(position.y));
         textA.text(find_angle);
@@ -268,41 +281,30 @@ function startGame(found_cities, found_position) {
             };
         }
 
-        if ( kbd.angle ) {
-            time_passed = time_passed+frame.timeDiff;
-            const time_int = (time_now-position.started+time_passed)/1000;
-			const int_dist = time_int*5;
-            const cos = Math.cos(kbd.angle);
-            const sin = Math.sin(kbd.angle);
-			const position_x = int_dist*cos+start_pos.x;
+        if ( position.angle ) {
+            time_passed = (new Date()).getTime()-client_start; 
+            const time_int = (server_time-position.started+time_passed)/1000;
+            const int_dist = time_int*5;
+            const cos = Math.cos(position.angle);
+            const sin = Math.sin(position.angle);
+            const position_x = int_dist*cos+start_pos.x;
             const position_y = int_dist*sin+start_pos.y;
-            position.x = position_x;
-            position.y = position_y;
-            cities.move({ x: -cos, y: -sin });
-            background.move({ x: -cos, y: -sin });
-            /*
-            let cos = move_speed * Math.cos(kbd.angle);
-            let sin = move_speed * Math.sin(kbd.angle);
-            position.x += cos;
-            position.y += sin;
-            cities.move({ x: -cos, y: -sin })
-            background.move({ x: -cos, y: -sin });
-            */
+            position.x = fixEdge(position_x, map_size.width);
+            position.y = fixEdge(position_y, map_size.height);
+            cities.setAttrs({ x: -position.x+(window_size.width/2), y: -position.y+(window_size.height/2) });
+            background.move({ x: -cos/5, y: -sin/5 });
         };
 
+        /*
         // keep position within the game size
-        if ( position.x < 0 ) {
+        if ( position.x < 0 )
             position.x = map_size.width;
-        };
-        if ( position.y < 0 ) {
+        if ( position.y < 0 )
             position.y = map_size.height;
-        };
-        if ( position.x > map_size.width ) {
+        if ( position.x > map_size.width )
             position.x = 0;
-        };
-        if ( position.y > map_size.height ) {
+        if ( position.y > map_size.height )
             position.y = 0;
-        };
 
         // important piece, this adjusts the cities layer which holds each city
         // this creates the infinite wrap around, using your window size to create a faux area
@@ -315,12 +317,23 @@ function startGame(found_cities, found_position) {
             cities.attrs.y = -map_size.height+window_size.height;
         if ( cities.attrs.y < -map_size.height+window_size.height )
             cities.attrs.y = window_size.height;
-            
+        */
+
         // background boxes only move 50 pixels (their size) in either direction before reseting
         if ( background.attrs.x < -box_size || background.attrs.x > box_size )
             background.attrs.x = 0;
         if ( background.attrs.y < -box_size || background.attrs.y > box_size )
             background.attrs.y = 0;
+    }
+
+    function insertHitCities() {
+        if ( position.angle ) {
+            const found_cities = findHitCities(position);
+            hitCities.remove({});
+            found_cities.forEach((city) => {
+                hitCities.insert(city);
+            });
+        };
     }
 
     function setAttrs() {
@@ -348,39 +361,38 @@ function startGame(found_cities, found_position) {
         Meteor.setTimeout(function(){
             clicked = false;
         }, 1000);
-    }    
+    }
     doc_map.addEventListener("click", e => {
         if ( !clicked ) {
-            time_now = TimeSync.serverTime( (new Date()).getTime() );
-            console.log("Click "+time_now)
             clicked = true;
-            time_passed = 0;
-            start_pos = { x: position.x, y: position.y };
-            let start_time = TimeSync.serverTime( (new Date()).getTime() );
             const start = { x: window_size.width/2, y: window_size.height/2 };
             const end = { x: e.layerX, y: e.layerY };
             const angle = Math.atan2(end.y - start.y, end.x - start.x);
             const angleDeg = Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI;
-            position.started = start_time;
-            kbd.angle = angle;
-            kbd.angleDeg = angleDeg;
-            Meteor.call('startMovement', angle, angleDeg);
-            const cities = findHitCities(position,angle,angleDeg);
-            hitCities.remove({});
-            cities.forEach((city) => {
-                hitCities.insert(city);
+            Meteor.call('startMovement', angle, angleDeg, (error, result) => {
+                position.x = result.x;
+                position.y = result.y;
+                position.started = result.started;
+                position.angle = angle;
+                position.angleDeg = angleDeg;
+                start_pos = { x: result.x, y: result.y };
+                insertHitCities();
+                server_time = TimeSync.serverTime( (new Date()).getTime() );
+                client_start = (new Date()).getTime();
+                time_passed = 0;
             });
             clearClick();
         };
     });
     doc_map.addEventListener("contextmenu", e => {
         e.preventDefault();
-        kbd.angle = false;
-        kbd.angleDeg = false;
+        position.angle = false;
+        position.angleDeg = false;
         Meteor.call('stopMovement');
+        hitCities.remove({});
     });
 
-    let period = 20;
+    let period = 10;
     let anim = new Konva.Animation(function(frame) {
         if ((frame.time % (period * 2)) < period) {
             update(frame);
@@ -388,5 +400,6 @@ function startGame(found_cities, found_position) {
             return false;
         }
     }, stage);
-    anim.start();
+    insertHitCities();
+    anim.start();    
 }

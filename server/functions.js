@@ -173,6 +173,19 @@ clearQueues = function () {
 checkCities = function () {
 	if ( !Cities.findOne({}) ) {
         let data = [];
+        // evenly spaced cities
+        for ( let i = 200; map_size.height-200 >= i; i+=400 ) {
+            for ( let o = 200; map_size.width-200 >= o; o+=400 ) {
+                data.push({
+                    x: o,
+                    y: i,
+                    radius: 100,
+                    fill: 'red',
+                    name: Fake.user().surname
+                });
+            }
+        }
+        /*
         for ( let i = 200; map_size.height-400 >= i; i+=850 ) {
             for ( let o = 200; map_size.width-400 >= o; o+=850 ) {
                 const chance = Math.floor(Math.random()*100-1);
@@ -190,6 +203,7 @@ checkCities = function () {
                 };
             }
         }
+        */
         data.forEach((city) => {
 			Cities.insert(city);
         });
