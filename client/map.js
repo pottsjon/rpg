@@ -29,7 +29,7 @@ Template.traveling.onDestroyed(function () {
 
 Template.traveling.helpers({
     cities(){
-        return hitCities.find({ distance: { $gt: 0 } },{ sort: { distance: 1 }, limit: 10 });
+        return hitCities.find({ time: { $gt: 0 } },{ sort: { distance: 1 }, limit: 10 });
     }
 });
 
@@ -222,7 +222,7 @@ function startGame(found_cities, found_position) {
             cities.add(clone);
             clone.cache();
         };
-        if ( cityX <= winW+radius && cityY > winH+radius && cityY < mapH-winH-radius ) {
+        if ( cityX <= winW+radius ) {
             clone = city.clone({ x: cityX+mapW });
             cities.add(clone);
             clone.cache();
@@ -237,7 +237,7 @@ function startGame(found_cities, found_position) {
             cities.add(clone);
             clone.cache();
         };
-        if ( cityX >= mapW-winW-radius && cityY < mapH-winH-radius && cityY > winH+radius ) {
+        if ( cityX >= mapW-winW-radius ) {
             clone = city.clone({ x: cityX-mapW });
             cities.add(clone);
             clone.cache();
@@ -253,6 +253,20 @@ function startGame(found_cities, found_position) {
             clone.cache();
         };
     });
+
+    function movement(time_passed) {
+        time_passed = ( !time_passed ? 0 : time_passed );
+        const time_int = (server_time-position.started+time_passed)/1000;
+        const int_dist = time_int*5;
+        const cos = Math.cos(position.angle);
+        const sin = Math.sin(position.angle);
+        const position_x = int_dist*cos+start_pos.x;
+        const position_y = int_dist*sin+start_pos.y;
+        position.x = fixEdge(position_x, map_size.width);
+        position.y = fixEdge(position_y, map_size.height);
+        cities.setAttrs({ x: -position.x+(window_size.width/2), y: -position.y+(window_size.height/2) });
+        background.move({ x: -cos/5, y: -sin/5 });
+    }
 
     function update(frame) {
         let find_angle = ( !position.angleDeg ? "" : 'A: '+Math.round(position.angleDeg)+'°' );
@@ -282,17 +296,8 @@ function startGame(found_cities, found_position) {
         }
 
         if ( position.angle ) {
-            time_passed = (new Date()).getTime()-client_start; 
-            const time_int = (server_time-position.started+time_passed)/1000;
-            const int_dist = time_int*5;
-            const cos = Math.cos(position.angle);
-            const sin = Math.sin(position.angle);
-            const position_x = int_dist*cos+start_pos.x;
-            const position_y = int_dist*sin+start_pos.y;
-            position.x = fixEdge(position_x, map_size.width);
-            position.y = fixEdge(position_y, map_size.height);
-            cities.setAttrs({ x: -position.x+(window_size.width/2), y: -position.y+(window_size.height/2) });
-            background.move({ x: -cos/5, y: -sin/5 });
+            time_passed = (new Date()).getTime()-client_start;
+            movement(time_passed);
         };
 
         /*
@@ -326,13 +331,30 @@ function startGame(found_cities, found_position) {
             background.attrs.y = 0;
     }
 
+    let nextTimeout = false;
+    function startTimer() {
+        try { Meteor.clearTimeout(nextTimeout) } catch(e) {};
+        let find_city = hitCities.findOne({ time: { $gt: 0 } },{ fields: { time: 1, name: 1 }, sort: { distance: 1 } });
+        console.log(find_city)
+        let timer = ( !find_city ? 200 : find_city.time*1000 );
+        nextTimeout = Meteor.setTimeout(function(){
+            if ( !find_city ) {
+                startTimer();
+            } else {
+                insertHitCities();
+            };
+        }, timer);
+    }
+
     function insertHitCities() {
         if ( position.angle ) {
-            const found_cities = findHitCities(position);
+            let hitting_cities = findHitCities(position);
             hitCities.remove({});
-            found_cities.forEach((city) => {
+            hitting_cities.forEach((city) => {
                 hitCities.insert(city);
             });
+            if ( hitting_cities && hitting_cities.length >= 1 )
+            startTimer();
         };
     }
 
@@ -369,6 +391,9 @@ function startGame(found_cities, found_position) {
             const end = { x: e.layerX, y: e.layerY };
             const angle = Math.atan2(end.y - start.y, end.x - start.x);
             const angleDeg = Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI;
+            let timing = (new Date()).getTime()-client_start;
+            let dis = distanceOf({ x: start_pos.x, y: start_pos.y },{ x: position.x, y: position.y });
+            console.log(dis/timing/1000)
             Meteor.call('startMovement', angle, angleDeg, (error, result) => {
                 position.x = result.x;
                 position.y = result.y;
@@ -376,10 +401,10 @@ function startGame(found_cities, found_position) {
                 position.angle = angle;
                 position.angleDeg = angleDeg;
                 start_pos = { x: result.x, y: result.y };
-                insertHitCities();
-                server_time = TimeSync.serverTime( (new Date()).getTime() );
                 client_start = (new Date()).getTime();
+                server_time = TimeSync.serverTime( client_start );
                 time_passed = 0;
+                insertHitCities();
             });
             clearClick();
         };
@@ -390,6 +415,9 @@ function startGame(found_cities, found_position) {
         position.angleDeg = false;
         Meteor.call('stopMovement');
         hitCities.remove({});
+        let timing = (new Date()).getTime()-client_start;
+        let dis = distanceOf({ x: start_pos.x, y: start_pos.y },{ x: position.x, y: position.y });
+        console.log(dis/timing/1000)
     });
 
     let period = 10;
@@ -400,6 +428,7 @@ function startGame(found_cities, found_position) {
             return false;
         }
     }, stage);
+    movement();
     insertHitCities();
     anim.start();    
 }

@@ -54,9 +54,10 @@ findHitCities = function (position) {
 			b = [line[1].x, line[1].y];
 			let nearest = {};
 			if ( collide(a, b, circle, radius*1, nearest ) ) {
-				let distance = distanceOf({ x: line[0].x, y: line[0].y },{ x: city.x, y: city.y });
+				let distance = distanceOf({ x: line[0].x, y: line[0].y },{ x: nearest[0], y: nearest[1] });
 				let real_dist = distance-radius+offset;
-				hit_cities.push({ name: city.name, distance: real_dist, time: Math.round(real_dist/5) });
+				if ( real_dist > 0 )
+				hit_cities.push({ name: city.name, distance: real_dist, time: Math.round(real_dist/5.0045) });
 			};
 		});
 		offset = offset+distanceOf({ x: line[0].x, y: line[0].y },{ x: line[1].x, y: line[1].y });
