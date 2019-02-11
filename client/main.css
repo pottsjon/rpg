@@ -21,14 +21,18 @@ img { pointer-events: none; }
 .half { width: 50%; display: inline-block; box-sizing: border-box; }
 
 #full { height: 100%; background: #ccc; }
-#full .box { width: 100%; max-width: 500px; height: 100%; position: relative; }
+#full .box, #full.traveling .box { width: 100%; max-width: 500px; height: 100%; position: relative; background: #a7a7a7; }
+#full.traveling .box { display: inline-block; }
+#full.map .box { background: none; pointer-events: none; }
+#full.traveling { position: absolute; top: 0; left: 0; width: 100%; height: 100%; text-align: center; }
 /*
-    turned off for test
+// turned off for test
 #full .box { margin: auto; }
 */
 
 #menu { text-align: center; background: #111; }
-.time { height: 20px; line-height: 20px; text-align: center; font-size: 11px; }
+#top { pointer-events: auto; }
+.time { height: 20px; line-height: 20px; text-align: center; font-size: 11px; background: #a7a7a7; }
 
 #login.box { width: 100%; max-width: 400px; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }
 #login input { -webkit-appearance: none; width: 100%; padding: 12px 10px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #84662a; background: #fff; color: #222; font-size: 16px; -moz-border-radius: 0px; -webkit-border-radius: 0px; border-radius: 0px; }
@@ -72,3 +76,13 @@ img { pointer-events: none; }
 .cities { position: absolute; top: 50px; right: 10px; z-index: 100; background: rgba(17, 17, 17, 0.5); color: #efefef; padding: 2px; }
 .cities .city span { display: inline-block; }
 .cities .city .name { width: 100px; overflow: hidden; margin-right: 5px; }
+
+@media ( max-width:600px ) {
+    #full .box {
+        max-width: none;
+    }
+    #menu { 
+        overflow: hidden;
+        height: 26px;
+    }
+}

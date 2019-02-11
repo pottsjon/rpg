@@ -1,11 +1,25 @@
 <head>
   <title>rpg</title>
   <link href="//cdn.materialdesignicons.com/3.2.89/css/materialdesignicons.min.css" rel="stylesheet" type="text/css" />
+  <meta name="viewport" content="width=device-width,initial-scale=1"/><meta charset="UTF-8"/>
 </head>
 
 <body>
   {{> sAlert}}
+  {{> traveling}}
 </body>
+
+<template name='traveling'>
+  <div id="full" class='traveling'>
+      <div class='box'>
+          <div class="cities">
+            {{#each cities}}{{> city}}{{/each}}
+          </div>
+          <div id="map">
+          </div>
+      </div>
+  </div>
+</template>
 
 <template name='menu'>
   <div id="top">
@@ -134,37 +148,32 @@
   </div>
 </template>
 
-<template name='traveling'>
-    <div id='full' class='traveling flex'>
+<template name='land'>
+  <div id='full' class='map flex'>
+      <div class='box'>
+          {{> menu}}
+      </div>
+  </div>
+</template>
+
+<template name='city'>
+  <div class="city"><span class="name">{{name}}</span><span>{{time}}</span></div>
+</template>
+
+<template name='leaderboard'>
+    <div id='full' class='leaderboard flex'>
         <div class='box'>
             {{> menu}}
-            <div class="cities">
-              {{#each cities}}{{> city}}{{/each}}
-            </div>
-            <div id="map">
-            </div>
+            <div class="button half noselect prev">Prev</div><div class="button half noselect next">Next</div>
+            {{#each leaders}}
+              <div class="leader">
+                <div class="name">
+                  <span class="rank">{{rank}}</span>
+                  <span>{{name}}</span>
+                </div>
+                <div class="amount">{{toNumbers total}}</div>
+              </div>
+            {{/each}}
         </div>
     </div>
   </template>
-
-  <template name='city'>
-    <div class="city"><span class="name">{{name}}</span><span>{{time}}</span></div>
-  </template>
-
-  <template name='leaderboard'>
-      <div id='full' class='leaderboard flex'>
-          <div class='box'>
-              {{> menu}}
-              <div class="button half noselect prev">Prev</div><div class="button half noselect next">Next</div>
-              {{#each leaders}}
-                <div class="leader">
-                  <div class="name">
-                    <span class="rank">{{rank}}</span>
-                    <span>{{name}}</span>
-                  </div>
-                  <div class="amount">{{toNumbers total}}</div>
-                </div>
-              {{/each}}
-          </div>
-      </div>
-    </template>

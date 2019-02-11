@@ -311,8 +311,8 @@ Template.menu.helpers({
 				route: '/hiring'
 			},
 			{
-				text: "Travel",
-				route: '/traveling'
+				text: "Map",
+				route: '/land'
 			},
 			{
 				text: "Leaderboard",

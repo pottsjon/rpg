@@ -46,12 +46,12 @@ Router.route('/hiring', {
 	}
 });
 
-Router.route('/traveling', {
+Router.route('/land', {
 	waitOn: function() {
         return [];
 	},
 	action: function(){
-		this.render('traveling');
+		this.render('land');
 	}
 });
 

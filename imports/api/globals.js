@@ -42,35 +42,91 @@ fixEdge = function (point,size) {
 	return point-(Math.floor(point/size)*size);
 }
 
+
 findHitCities = function (position) {
-	let hit_cities = [];
-	let offset = 0;
-	let find_lines = findNextLines({ x: position.x, y: position.y }, position.angle, position.angleDeg);
+	let hit_cities = [],
+	offset = 0,
+	find_lines = findNextLines({ x: position.x, y: position.y }, position.angle, position.angleDeg),
+	fetch_cities = Cities.find().fetch();
 	find_lines.forEach((line) => {
-		Cities.find().fetch().forEach((city) => {
+		let a = [line[0].x, line[0].y],
+		b = [line[1].x, line[1].y];
+		fetch_cities.forEach((city) => {
 			let circle = [city.x, city.y],
+			distance,
 			radius = city.radius,
-			a = [line[0].x, line[0].y],
-			b = [line[1].x, line[1].y];
-			let nearest = {};
-			if ( collide(a, b, circle, radius*1, nearest ) ) {
-				let distance = distanceOf({ x: line[0].x, y: line[0].y },{ x: nearest[0], y: nearest[1] });
-				let real_dist = distance-radius+offset;
+			intersect = getIntersections(a, b, [city.x, city.y, city.radius]),
+			inside = inCircle({ x: position.x, y: position.y },{ x: city.x, y: city.y }, city.radius);			
+			if ( collide( a, b, circle, radius*1 ) && !inside ) {
+				if ( intersect.int1 && intersect.int2 ) {
+					int1_distance = distanceOf(a, intersect.int1.coords );
+					int2_distance = distanceOf(a, intersect.int2.coords );
+					distance = ( int1_distance < int2_distance ? int1_distance : int2_distance );
+				} else if ( intersect.int1 ) {
+					distance = distanceOf(a, intersect.int1.coords );
+				} else if ( intersect.int2 ) {
+					distance = distanceOf(a, intersect.int2.coords );
+				};
+				let real_dist = distance+offset;
 				if ( real_dist > 0 )
-				hit_cities.push({ name: city.name, distance: real_dist, time: Math.round(real_dist/5.0045) });
+				hit_cities.push({ name: city.name, distance: real_dist, time: Math.round(real_dist/5.004) });
 			};
 		});
-		offset = offset+distanceOf({ x: line[0].x, y: line[0].y },{ x: line[1].x, y: line[1].y });
+		offset = offset+distanceOf(a,b);
 	});
 	return hit_cities;
 }
 
 distanceOf = function (start, end) {
-	let a = start.x - end.x;
-	let b = start.y - end.y;
-	let c = Math.sqrt( a*a + b*b );
+	let a, b, c;
+	a = start[0] - end[0];
+	b = start[1] - end[1];
+	c = Math.sqrt( a*a + b*b );
 	return c;
-};
+}
+
+getIntersections = function (a, b, c) {
+	// Calculate the euclidean distance between a & b
+	eDistAtoB = Math.sqrt( Math.pow(a[0]-b[0], 2) + Math.pow(a[1]-b[1], 2) );
+
+	// compute the direction vector d from a to b
+	d = [ (b[0]-a[0])/eDistAtoB, (b[1]-a[1])/eDistAtoB ];
+
+	// Now the line equation is x = dx*t + ax, y = dy*t + ay with 0 <= t <= 1.
+
+	// compute the value t of the closest point to the circle center (cx, cy)
+	t = (d[0] * (c[0]-a[0])) + (d[1] * (c[1]-a[1]));
+
+	// compute the coordinates of the point e on line and closest to c
+    let e = {coords:[]};
+	e.coords[0] = (t * d[0]) + a[0];
+	e.coords[1] = (t * d[1]) + a[1];
+
+	// Calculate the euclidean distance between c & e
+	eDistCtoE = Math.sqrt( Math.pow(e.coords[0]-c[0], 2) + Math.pow(e.coords[1]-c[1], 2) );
+
+	// test if the line intersects the circle
+	if( eDistCtoE < c[2] ) {
+		// compute distance from t to circle intersection point
+	    dt = Math.sqrt( Math.pow(c[2], 2) - Math.pow(eDistCtoE, 2));
+
+	    // compute first intersection point
+	    let f = {coords:[]};
+	    f.coords[0] = ((t-dt) * d[0]) + a[0];
+	    f.coords[1] = ((t-dt) * d[1]) + a[1];
+
+	    // compute second intersection point
+	    let g = {coords:[]};
+	    g.coords[0] = ((t+dt) * d[0]) + a[0];
+	    g.coords[1] = ((t+dt) * d[1]) + a[1];
+
+		return {int1:f, int2:g};
+
+	} else {
+		return false;
+	}
+}
+
 
 inCircle = function (point, circle, radius) {
     return Math.sqrt(Math.pow(point.x-circle.x, 2)+Math.pow(point.y-circle.y, 2)) < radius;
