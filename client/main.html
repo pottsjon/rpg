@@ -10,8 +10,11 @@
 </body>
 
 <template name='traveling'>
-  <div id="full" class='traveling'>
+  <div class='traveling'>
       <div class='box'>
+          <div class="visit">
+            {{{visit}}}{{{next}}}
+          </div>
           <div class="cities">
             {{#each cities}}{{> city}}{{/each}}
           </div>

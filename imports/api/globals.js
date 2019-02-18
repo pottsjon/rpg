@@ -27,20 +27,21 @@ itemLevel = function (exp) {
 	}
 };
 
-startingCity = function (userId) {
-    // let city_list = Cities.find({}).fetch();
-    Positions.insert({
-        owner: userId,
-        x: 1155,
-        y: 262,
-        city: 'Betionar',
-        visiting: true
-    });
+realPosition = function (start_pos,position,server_time,client_start) {
+	const int_dist = ( !position.started ? 0 : ((server_time-position.started+(new Date()).getTime()-client_start)/1000)*5 ),
+	cos = ( !position.angle ? 1 : Math.cos(position.angle) ),
+	sin = ( !position.angle ? 1 : Math.sin(position.angle) );
+	return {
+		x: fixEdge(int_dist*cos+start_pos.x, map_size.width),
+		y: fixEdge(int_dist*sin+start_pos.y, map_size.height),
+		cos: cos,
+		sin: sin
+	};
 };
 
 fixEdge = function (point,size) {
 	return point-(Math.floor(point/size)*size);
-}
+};
 
 
 findHitCities = function (position) {
@@ -68,14 +69,16 @@ findHitCities = function (position) {
 					distance = distanceOf(a, intersect.int2.coords );
 				};
 				let real_dist = distance+offset;
+				city.distance = real_dist;
+				city.time = Math.round(real_dist/5.004);
 				if ( real_dist > 0 )
-				hit_cities.push({ name: city.name, distance: real_dist, time: Math.round(real_dist/5.004) });
+				hit_cities.push(city);
 			};
 		});
 		offset = offset+distanceOf(a,b);
 	});
 	return hit_cities;
-}
+};
 
 distanceOf = function (start, end) {
 	let a, b, c;
@@ -83,7 +86,7 @@ distanceOf = function (start, end) {
 	b = start[1] - end[1];
 	c = Math.sqrt( a*a + b*b );
 	return c;
-}
+};
 
 getIntersections = function (a, b, c) {
 	// Calculate the euclidean distance between a & b
@@ -125,7 +128,7 @@ getIntersections = function (a, b, c) {
 	} else {
 		return false;
 	}
-}
+};
 
 
 inCircle = function (point, circle, radius) {
@@ -182,7 +185,7 @@ findLinePoints = function (start, angle, angleDeg) {
 	const next_point_start = { x: second_x, y: second_y };
 	const points = [ { x: start.x, y: start.y }, closest_end, next_point_start ];
 	return points;
-}
+};
 
 findNextLines = function (start, angle, angleDeg) {
 	let lines = [];
@@ -191,9 +194,9 @@ findNextLines = function (start, angle, angleDeg) {
 		count++
 		const point = findLinePoints({ x: start.x, y: start.y }, angle, angleDeg);
 		lines.push(point);
-		if ( count < 3 )
+		if ( count < 5 )
 		findLine({ x: point[2].x, y: point[2].y }, angle, angleDeg);
 	}
 	findLine(start, angle, angleDeg);
 	return lines;
-}
+};

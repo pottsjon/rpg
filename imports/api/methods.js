@@ -1,4 +1,13 @@
 Meteor.methods({
+	'visitNext': function(visit) {
+		let position = Positions.findOne({ owner: this.userId });
+		const update = ( visit ? { $set: { visit: true } } : { $unset: { visit: "" } } );
+		Positions.update({ _id: position._id },update);
+		if ( visit )
+		position.visit = true;
+		if ( Meteor.isServer )
+		cityTimerStart(position);
+	},
 	'startMovement': function(angle, angleDeg) {
 		const time_now = (new Date()).getTime();
 		let position = Positions.findOne({ owner: this.userId });
@@ -8,38 +17,51 @@ Meteor.methods({
 			position.x = fixEdge(int_dist*Math.cos(position.angle)+position.x, map_size.width);
 			position.y = fixEdge(int_dist*Math.sin(position.angle)+position.y, map_size.height);
 		};
+		let set_position = {
+			x: position.x,
+			y: position.y,
+			angle: angle,
+			angleDeg: angleDeg,
+			started: time_now
+		};
+		if ( position.city )
+		set_position['city.visiting'] = false;
 		Positions.update({ _id: position._id },{
-			$set: {
-				x: position.x,
-				y: position.y,
-				angle: angle,
-				angleDeg: angleDeg,
-				started: time_now
-			}
+			$set: set_position
 		});
-		return { 
+		set_position.owner = this.userId;
+		if ( Meteor.isServer )
+		cityTimerStart(set_position);
+		return {
 			x: position.x,
 			y: position.y,
 			started: time_now
 		};
 	},
-	'stopMovement': function() {
+	'stopMovement': function(owner) {
 		const time_now = (new Date()).getTime();
-		let position = Positions.findOne({ owner: this.userId });
+		const pos_owner = ( !owner ? this.userId : owner );
+		let position = Positions.findOne({ owner: pos_owner });
 		if ( position.angle ) {
+			if ( Meteor.isServer )
+			cityTimerStop(pos_owner);
 			const time_int = (time_now-position.started)/1000;
 			const int_dist = time_int*5;
 			position.x = fixEdge(int_dist*Math.cos(position.angle)+position.x, map_size.width);
 			position.y = fixEdge(int_dist*Math.sin(position.angle)+position.y, map_size.height);
-			Positions.update({ owner: this.userId },{
-				$set: {
-					x: position.x,
-					y: position.y,
-				},
+			let set_position = {
+				x: position.x,
+				y: position.y
+			}
+			if ( position.city )
+			set_position['city.visiting'] = true;
+			Positions.update({ owner: pos_owner },{
+				$set: set_position,
 				$unset: {
 					angle: "",
 					angleDeg: "",
-					started: ""
+					started: "",
+					visit: ""
 				}
 			});
 		};

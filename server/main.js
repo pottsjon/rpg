@@ -31,6 +31,8 @@ Meteor.startup(() => {
 	checkTasks();
 	checkItems();
 	awardQueues();
+	positionTracker();
+	tradeTracker();
 	UserStatus.events.on("connectionLogout", function(fields) {
 		Meteor.users.update({ _id: fields.userId },{
 			$set: {

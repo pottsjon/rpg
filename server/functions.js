@@ -18,6 +18,119 @@ workforceAdd = function (count) {
     });
 };
 
+startingCity = function (userId) {
+	const city_list = Cities.find({}).fetch();
+	const choice = Math.floor(Math.random()*(city_list.length-1));
+    const city = city_list[choice];
+    city.visiting = true;
+    Positions.insert({
+        owner: userId,
+        x: city.x,
+        y: city.y,
+        city: city
+    });
+};
+
+nextCity = function (position) {
+    let hitting_cities = findHitCities(position),
+    lowest = Number.POSITIVE_INFINITY,
+    tmp,
+    found_city;
+    for ( let i = hitting_cities.length-1; i >= 0 ; i-- ) {
+        tmp = hitting_cities[i].distance;
+        if ( tmp < lowest ) {
+            lowest = tmp;
+            found_city = hitting_cities[i];
+        };
+    }
+    return found_city;
+};
+
+let cityTimers = [];
+cityTimerStart = function (position) {
+    try { Meteor.clearTimeout(cityTimers[position.owner]) } catch(e) {};
+    let city = nextCity(position);
+    if ( city ) {
+        if ( position.visit )
+        city.visiting = true;
+        cityTimers[position.owner] = Meteor.setTimeout(function() {
+            Positions.update({
+                owner: position.owner
+            },{
+                $set: {
+                    city: city
+                }
+            });
+            const time_now = (new Date()).getTime();
+            const find_pos = realPosition(position,position,time_now,time_now);
+            position.x = find_pos.x;
+            position.y = find_pos.y;
+            if ( position.visit ) {
+                Meteor.call('stopMovement', position.owner);
+            } else {
+                cityTimerStart(position);
+            };
+        }, city.time*1000);
+    };
+};
+
+positionTracker = function () {
+    const time_now = (new Date()).getTime();
+    Positions.find({ started: { $exists: true } }).fetch().forEach((position) => {
+        const find_pos = realPosition(position,position,time_now,time_now);
+        position.x = find_pos.x;
+        position.y = find_pos.y;
+        cityTimerStart(position);
+    });
+};
+
+let tradeTimers = [];
+tradeTracker = function () {
+    cityTrade = function (data) {
+        try { Meteor.clearTimeout(tradeTimers[data.owner]) } catch(e) { };
+        let counter = 0;
+        cityTradeStart = function (data) {
+            tradeTimers[data.owner] = Meteor.setTimeout(function(){
+                counter++
+                const time_now = (new Date()).getTime();
+                const find_pos = realPosition(data,data,time_now,time_now);
+                const inside = inCircle(find_pos, { x: data.city.x, y: data.city.y }, data.city.radius);
+                if ( counter == 10 ) {
+                    cityTrade(data);
+                } else if ( inside ) {
+                    cityTradeStart(data);
+                } else if ( !inside ) {
+                    Positions.update({ _id: data._id },{
+                        $unset: {
+                            city: ""
+                        }
+                    });
+                };
+            }, 500);
+        };
+        cityTradeStart(data);
+    };
+    Positions.find({ "$and": [
+        { city: { $exists: true } },
+        { started: { $exists: true } }
+    ] }).observe({
+        added: function(data) {
+            cityTrade(data);
+        },
+        changed: function(data) {
+            try { Meteor.clearTimeout(tradeTimers[data.owner]) } catch(e) { };
+            tradeTimers[data.owner] = Meteor.setTimeout(function(){
+                cityTrade(data);
+            }, 5000);
+        }
+    });
+};
+
+cityTimerStop = function (owner) {
+    try { Meteor.clearTimeout(cityTimers[owner]) } catch(e) { };
+    try { Meteor.clearTimeout(tradeTimers[owner]) } catch(e) { };
+};
+
 var queueSkill = [];
 var queueInt = [];
 var queueTimeout = [];
@@ -173,6 +286,7 @@ clearQueues = function () {
 checkCities = function () {
 	if ( !Cities.findOne({}) ) {
         let data = [];
+        /*
         // evenly spaced cities
         for ( let i = 200; map_size.height-200 >= i; i+=400 ) {
             for ( let o = 200; map_size.width-200 >= o; o+=400 ) {
@@ -185,25 +299,23 @@ checkCities = function () {
                 });
             }
         }
-        /*
-        for ( let i = 200; map_size.height-400 >= i; i+=850 ) {
-            for ( let o = 200; map_size.width-400 >= o; o+=850 ) {
+        */
+        for ( let i = 200; map_size.height-200 >= i; i+=500 ) {
+            for ( let o = 200; map_size.width-200 >= o; o+=500 ) {
                 const chance = Math.floor(Math.random()*100-1);
-                if ( chance > 50 ) {
-                    const radius = Math.floor(Math.random()*200)+100;
-                    const offset_o = Math.floor(Math.random()*radius);
-                    const offset_i = Math.floor(Math.random()*radius);
+                if ( chance > 15 ) {
+                    const radius = Math.floor(Math.random()*50)+50;
+                    const offset_o = Math.floor(Math.random()*150+50);
+                    const offset_i = Math.floor(Math.random()*150+50);
                     data.push({
                         x: o+offset_o,
                         y: i+offset_i,
                         radius: radius*1,
-                        fill: 'red',
                         name: Fake.user().surname
                     });
                 };
             }
         }
-        */
         data.forEach((city) => {
 			Cities.insert(city);
         });

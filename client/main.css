@@ -20,15 +20,18 @@ img { pointer-events: none; }
 
 .half { width: 50%; display: inline-block; box-sizing: border-box; }
 
-#full { height: 100%; background: #ccc; }
-#full .box, #full.traveling .box { width: 100%; max-width: 500px; height: 100%; position: relative; background: #a7a7a7; }
-#full.traveling .box { display: inline-block; }
+#full, .traveling { height: 100%; background: #ccc; }
+#full .box, .traveling .box { width: 100%; max-width: 500px; height: 100%; position: relative; background: #a7a7a7; z-index: 110; }
+.traveling .box { display: inline-block; background: #885530; }
 #full.map .box { background: none; pointer-events: none; }
-#full.traveling { position: absolute; top: 0; left: 0; width: 100%; height: 100%; text-align: center; }
+.traveling { position: absolute; top: 0; left: 0; width: 100%; height: 99%; text-align: center; }
 /*
 // turned off for test
 #full .box { margin: auto; }
 */
+
+#map { background: #885530; }
+#map canvas:nth-child(3) { -moz-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); -webkit-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); }
 
 #menu { text-align: center; background: #111; }
 #top { pointer-events: auto; }
@@ -73,9 +76,17 @@ img { pointer-events: none; }
 .worker { cursor: pointer; padding: 1px 2px; }
 .worker.employee { padding: 2px; background: #c2dbe8; }
 
-.cities { position: absolute; top: 50px; right: 10px; z-index: 100; background: rgba(17, 17, 17, 0.5); color: #efefef; padding: 2px; }
-.cities .city span { display: inline-block; }
-.cities .city .name { width: 100px; overflow: hidden; margin-right: 5px; }
+.cities { position: absolute; top: 50px; right: 10px; z-index: 100; background: rgba(17, 17, 17, 0.7); color: #efefef; }
+.cities .city { padding: 2px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); text-align: left; }
+.cities .city span { display: inline-block; vertical-align: middle; }
+.cities .city .name { width: 80px; overflow: hidden; text-overflow: ellipsis; margin-right: 10px; }
+
+.visit { position: absolute; bottom: 10px; right: 10px; z-index: 100; text-align: right; }
+.visit .checkbox { margin-left: 10px; display: inline-block; vertical-align: middle; }
+.visit .checkbox .mdi { color: #2f562b; font-size: 48px; height: 48px; line-height: 48px; cursor: pointer; display: inline-block; vertical-align: middle; }
+.visit .checkbox .mdi.lit { color: #57ce4b; }
+.visit .button { display: inline-block; vertical-align: middle; padding: 15px 20px; background: #33b76f; color: #154811; font-weight: bold; font-size: 16px; }
+.visit .button.stop { background: #ca3131; color: #f3d7d7; }
 
 @media ( max-width:600px ) {
     #full .box {
