@@ -32,7 +32,9 @@ Meteor.publish("queues", function () {
 			oFields["name"] = Workers.findOne({
 				_id: oFields.worker
 			},{ fields: { name: 1 } }).name;
-			oFields.task = Tasks.findOne({ _id: oFields.taskId },{ fields: { task: 1 } });
+			oFields.task = Tasks.findOne({
+				_id: oFields.taskId
+			},{ fields: { task: 1 } });
 			pub.added('queues', oId, oFields);
 		},
 		changed: function(oId, oFields) {

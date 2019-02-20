@@ -416,7 +416,12 @@ Template.traveling.onRendered(function () {
                         let hitting_cities = findHitCities(position);
                         hitCities.remove({},function(err, count) {
                             hitting_cities.forEach((city) => {
-                                hitCities.insert(city,function(err, count) {               
+                                hitCities.insert(city,function(err, count) {
+                                    if ( err ) {
+                                        const find_city = hitCities.findOne({ name: city.name },{ fields: { distance: 1 } });
+                                        if ( find_city && city.distance < find_city.distance  )
+                                        hitCities.update({ _id: find_city._id },{ $set: { distance: city.distance, time: city.time } });
+                                    };
                                 });
                             });
                             if ( hitting_cities && hitting_cities.length >= 1 )
