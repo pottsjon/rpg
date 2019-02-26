@@ -43,40 +43,65 @@ fixEdge = function (point,size) {
 	return point-(Math.floor(point/size)*size);
 };
 
+findNextLines = function (start, angle, angleDeg) {
+	let lines = [];
+	let count = 0;
+	findLine = function (start, angle, angleDeg) {
+		count++
+		const point = findLinePoints(start, angle, angleDeg);
+		lines.push(point);
+		/*
+		if ( count < 5 )
+		findLine({ x: point[2].x, y: point[2].y }, angle, angleDeg);
+		*/
+	}
+	findLine(start, angle, angleDeg);
+	return lines;
+};
 
 findHitCities = function (position) {
-	let hit_cities = [],
-	offset = 0,
-	find_lines = findNextLines({ x: position.x, y: position.y }, position.angle, position.angleDeg),
-	fetch_cities = Cities.find().fetch();
-	find_lines.forEach((line) => {
-		let a = [line[0].x, line[0].y],
-		b = [line[1].x, line[1].y];
-		fetch_cities.forEach((city) => {
-			let circle = [city.x, city.y],
-			distance,
-			radius = city.radius,
-			intersect = getIntersections(a, b, [city.x, city.y, city.radius]),
-			inside = inCircle({ x: position.x, y: position.y },{ x: city.x, y: city.y }, city.radius);			
-			if ( collide( a, b, circle, radius*1 ) && !inside ) {
-				if ( intersect.int1 && intersect.int2 ) {
-					int1_distance = distanceOf(a, intersect.int1.coords );
-					int2_distance = distanceOf(a, intersect.int2.coords );
-					distance = ( int1_distance < int2_distance ? int1_distance : int2_distance );
-				} else if ( intersect.int1 ) {
-					distance = distanceOf(a, intersect.int1.coords );
-				} else if ( intersect.int2 ) {
-					distance = distanceOf(a, intersect.int2.coords );
+	let hit_cities = [], offset = 0, time_now = (new Date()).getTime();
+	startFindingHits = function (position, next_line) {
+		const line_start = ( !next_line ? { x: position.x, y: position.y } : { x: next_line.x, y: next_line.y } );
+		const find_lines = findNextLines(line_start, position.angle, position.angleDeg);
+		find_lines.forEach((line) => {
+			let a = [line[0].x, line[0].y],
+			b = [line[1].x, line[1].y];
+			Cities.find().fetch().forEach((city) => {
+				let distance,
+				int1_distance,
+				int2_distance;
+				const circle = [city.x, city.y],
+				radius = city.radius,
+				intersect = getIntersections(a, b, [city.x, city.y, city.radius]),
+				inside = inCircle({ x: position.x, y: position.y },{ x: city.x, y: city.y }, city.radius);			
+				if ( collide( a, b, circle, radius*1 ) && !inside ) {
+					if ( intersect.int1 && intersect.int2 ) {
+						int1_distance = distanceOf(a, intersect.int1.coords );
+						int2_distance = distanceOf(a, intersect.int2.coords );
+						distance = ( int1_distance < int2_distance ? int1_distance : int2_distance );
+					} else if ( intersect.int1 ) {
+						distance = distanceOf(a, intersect.int1.coords );
+					} else if ( intersect.int2 ) {
+						distance = distanceOf(a, intersect.int2.coords );
+					};
+					let real_dist = distance+offset;
+					city.distance = real_dist;
+					city.time = Math.round(real_dist/5.0045);
+					city.started = time_now
+					if ( real_dist > 0 )
+					hit_cities.push(city);
 				};
-				let real_dist = distance+offset;
-				city.distance = real_dist;
-				city.time = Math.round(real_dist/5.004);
-				if ( real_dist > 0 )
-				hit_cities.push(city);
+			});
+			offset = offset+distanceOf(a,b);
+			if ( hit_cities.length < 5 ) {
+				startFindingHits(position, { x: line[2].x, y: line[2].y });
+			} else {
+				return hit_cities;
 			};
 		});
-		offset = offset+distanceOf(a,b);
-	});
+	};
+	startFindingHits(position);
 	return hit_cities;
 };
 
@@ -163,13 +188,11 @@ getEquationOfLineFromTwoPoints = function (point1, point2) {
 };
 
 findLinePoints = function (start, angle, angleDeg) {
-	const x_dir = ( angleDeg <= -90 || angleDeg >= 90 ? "left" : "right" );
-	const y_dir = ( angleDeg > 0 ? "down" : "up" );
 	const cos = 2 * Math.cos(angle);
 	const sin = 2 * Math.sin(angle);
 	const line = getEquationOfLineFromTwoPoints({ x: start.x, y: start.y },{ x: start.x+cos, y: start.y+sin });
-	const x_end = ( x_dir == "left" ? { x: 0, y: line.yIntercept } : { x: map_size.width, y: line.gradient*map_size.height+line.yIntercept } );
-	const y_end = ( y_dir == "up" ? { x: -line.yIntercept/line.gradient, y: 0 } : { x: (map_size.width-line.yIntercept)/line.gradient, y: map_size.height } );
+	const x_end = ( angleDeg <= -90 || angleDeg >= 90 ? { x: 0, y: line.yIntercept } : { x: map_size.width, y: line.gradient*map_size.height+line.yIntercept } );
+	const y_end = ( angleDeg > 0 ? { x: (map_size.width-line.yIntercept)/line.gradient, y: map_size.height } : { x: -line.yIntercept/line.gradient, y: 0 } );
 	let closest_end = ( x_end.x < 0 || x_end.x > map_size.width || x_end.y < 0 || x_end.y > map_size.height ? y_end : x_end );
 	if ( ( !closest_end.x && closest_end.x != 0 ) || ( !closest_end.y && closest_end.y != 0 ) )
 	closest_end = ( angleDeg == -90 ? { x: start.x, y: 0 } : { x: start.x, y: map_size.height } );
@@ -185,18 +208,4 @@ findLinePoints = function (start, angle, angleDeg) {
 	const next_point_start = { x: second_x, y: second_y };
 	const points = [ { x: start.x, y: start.y }, closest_end, next_point_start ];
 	return points;
-};
-
-findNextLines = function (start, angle, angleDeg) {
-	let lines = [];
-	let count = 0;
-	findLine = function (start, angle, angleDeg) {
-		count++
-		const point = findLinePoints({ x: start.x, y: start.y }, angle, angleDeg);
-		lines.push(point);
-		if ( count < 5 )
-		findLine({ x: point[2].x, y: point[2].y }, angle, angleDeg);
-	}
-	findLine(start, angle, angleDeg);
-	return lines;
 };

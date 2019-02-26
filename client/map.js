@@ -4,39 +4,49 @@ windowSize = function () {
 	return { width: width, height: height };
 };
 
+// sorta global variables
 var stage, anim, loaded = false, gameStarted, nextTimeout;
 Template.traveling.onRendered(function () {
 	Tracker.autorun(function() {
-        if ( Meteor.user() ) { 
+        if ( Meteor.user() ) {
             window_size = windowSize();
+            // find the starting position
             let position = Positions.findOne({ owner: Meteor.userId() });
             if ( position && !gameStarted ) {
                 gameStarted = true;
+                let loading, loadLength, player, city_hold;
                 let start_pos = { x: position.x, y: position.y };
                 let client_start = (new Date()).getTime();
                 let server_time = TimeSync.serverTime( client_start );
+
+                // fix the position based on time since started
                 const find_pos = realPosition(position,position,server_time,client_start);
                 position.x = find_pos.x;
                 position.y = find_pos.y;
+                
                 const top = position.y-(window_size.height/2)-1000,
                     bottom = position.y+(window_size.height/2)+1000,
                     left = position.x-(window_size.width/2)-1000,
                     right = position.x+(window_size.width/2)+1000;
+
                 let near_cities = Cities.find({ "$and": [
-                        { "$and": [{ x: { $gte: left } },{ x: { $lte: right } }] },
-                        { "$and": [{ y: { $lte: bottom } },{ y: { $gte: top } }] }
-                    ] }).fetch();
-                const other_cities = Cities.find({ "$or": [
-                        { "$or": [{ x: { $lt: left } },{ x: { $gt: right } }] },
-                        { "$or": [{ y: { $gt: bottom } },{ y: { $lt: top } }] }
-                    ] }).fetch();
+                    { "$and": [{ x: { $gte: left } },{ x: { $lte: right } }] },
+                    { "$and": [{ y: { $lte: bottom } },{ y: { $gte: top } }] }
+                ] }).fetch();
+                let other_cities = Cities.find({ "$or": [
+                    { "$or": [{ x: { $lt: left } },{ x: { $gt: right } }] },
+                    { "$or": [{ y: { $gt: bottom } },{ y: { $lt: top } }] }
+                ] }).fetch();
+                
+                // loads up cities from other side of map to clone, adds them to near_cities
                 if ( top < 0 )
                 Cities.find({ "$and": [
                     { "$and": [{ x: { $gte: left } },{ x: { $lte: right } }] },
-                    { "$and": [{ y: { $lte: map_size.height+top } },{ y: { $gte: map_size.height } }] }
+                    { "$and": [{ y: { $lte: map_size.height } },{ y: { $gte: map_size.height+top } }] }
                 ] }).fetch().forEach((city) => {
                     near_cities.push(city);
                 });
+
                 if ( bottom > map_size.height )
                 Cities.find({ "$and": [
                     { "$and": [{ x: { $gte: left } },{ x: { $lte: right } }] },
@@ -64,7 +74,7 @@ Template.traveling.onRendered(function () {
                 if ( top < 0 && left < 0 )
                 Cities.find({ "$and": [
                     { "$and": [{ x: { $gte: map_size.width+left } },{ x: { $lte: map_size.width } }] },
-                    { "$and": [{ y: { $lte: map_size.height+top } },{ y: { $gte: map_size.height } }] }
+                    { "$and": [{ y: { $lte: map_size.height } },{ y: { $gte: map_size.height+top } }] }
                 ] }).fetch().forEach((city) => {
                     near_cities.push(city);
                 });
@@ -72,7 +82,7 @@ Template.traveling.onRendered(function () {
                 if ( top < 0 && right > map_size.width )
                 Cities.find({ "$and": [
                     { "$and": [{ x: { $gte: 0 } },{ x: { $lte: right-map_size.width } }] },
-                    { "$and": [{ y: { $lte: map_size.height+top } },{ y: { $gte: map_size.height } }] }
+                    { "$and": [{ y: { $lte: map_size.height } },{ y: { $gte: map_size.height+top } }] }
                 ] }).fetch().forEach((city) => {
                     near_cities.push(city);
                 });
@@ -92,8 +102,14 @@ Template.traveling.onRendered(function () {
                 ] }).fetch().forEach((city) => {
                     near_cities.push(city);
                 });
-                
-                let loading, loadLength, player;
+            
+                // finds duplicates, opaque backgrounds show when mulitples exist
+                for ( let n = 0; near_cities.length > n; n++ ) {
+                    for ( let o = 0; other_cities.length > o; o++ ) {
+                        if ( near_cities[n].name == other_cities[o].name )
+                        other_cities.splice(o, 1);
+                    }
+                }
 
                 stage = new Konva.Stage({
                     container: 'map',
@@ -101,6 +117,7 @@ Template.traveling.onRendered(function () {
                     height: window_size.height
                 });
                 
+                // size of each square in the background
                 const box_size = 100;
                 const box_group = new Konva.Group();
                 const box = new Konva.Rect({
@@ -149,12 +166,6 @@ Template.traveling.onRendered(function () {
                 stage.add(cities);
 
                 let city_list = cities.getChildren();
-
-                function proxCities(found_cities, others) {
-                    initCities(found_cities, others);
-                }
-
-                let city_hold;
                 
                 const city_group = new Konva.Group({});
 
@@ -190,52 +201,8 @@ Template.traveling.onRendered(function () {
                         
                     city_group.add(label);
                 };
-                imageObj.src = '/assets/village.png'
+                imageObj.src = '/assets/village.png';
 
-
-                function incWidth(inc,inits,others) {
-                    const timer = ( !others ? .1 : 1 );
-                    Meteor.setTimeout(function(){
-                        if ( !others ) {
-                        const winW = window_size.width-(window_size.width*.2);
-                        const width = winW*(inc/inits.length);
-                        loading.setAttr('width', width-4);
-                        };
-                        const city = inits[inc];
-                        const cg_clone = city_group.clone({
-                            x: city.x,
-                            y: city.y,
-                            radius: city.radius
-                        });
-                        if ( cg_clone.children[0] )
-                        cg_clone.children[0].setAttrs({
-                            offsetX: city.radius,
-                            offsetY: city.radius,
-                            width: city.radius*2,
-                            height: city.radius*2
-                        });
-                        if ( cg_clone.children[1] )
-                        cg_clone.children[1].children[1].setAttrs({
-                            text: city.name+"\n"+city.x+','+city.y
-                        });
-                        city_hold.push(cg_clone);
-                        cities.add(cg_clone);
-                        inc++;
-                        if ( inc < inits.length ) {
-                            incWidth(inc,inits,others);
-                        } else {
-                            cloneCities(others);
-                            try { clearLoad(others) } catch(e) {};
-                            insertHitCities();
-                        }
-                    }, timer);
-                }
-
-                function initCities(inits, others) {
-                    city_hold = [];
-                    incWidth(0,inits,others);
-                }
-                
                 let players = new Konva.Layer({
                     hitGraphEnabled : false
                 });
@@ -368,7 +335,7 @@ Template.traveling.onRendered(function () {
                 }
 
                 const move_speed = 5.14/window.devicePixelRatio;
-                function movement() {
+                movement = function () {
                     if ( loaded ) {
                         const find_pos = realPosition(start_pos,position,server_time,client_start);
                         position.x = find_pos.x;
@@ -411,10 +378,10 @@ Template.traveling.onRendered(function () {
                     }, timer);
                 }
 
-                function insertHitCities() {
+                insertHitCities = function () {
                     if ( position.angle ) {
-                        let hitting_cities = findHitCities(position);
                         hitCities.remove({},function(err, count) {
+                            let hitting_cities = findHitCities(position);
                             hitting_cities.forEach((city) => {
                                 hitCities.insert(city,function(err, count) {               
                                 });
@@ -513,6 +480,65 @@ Template.traveling.onRendered(function () {
                 let clicked = false;
                 let loadBox;
 
+                function incWidth(inc,inits,others) {
+                    const timer = ( !others ? 10 : 100 );
+                    Meteor.setTimeout(function(){
+                        if ( !others ) {
+                        const winW = window_size.width-(window_size.width*.2);
+                        const width = winW*(inc/inits.length);
+                        loading.setAttr('width', width-4);
+                        };
+                        const city = inits[inc];
+                        const cg_clone = city_group.clone({
+                            x: city.x,
+                            y: city.y,
+                            radius: city.radius
+                        });
+                        if ( cg_clone.children[0] )
+                        cg_clone.children[0].setAttrs({
+                            offsetX: city.radius,
+                            offsetY: city.radius,
+                            width: city.radius*2,
+                            height: city.radius*2
+                        });
+                        if ( cg_clone.children[1] )
+                        cg_clone.children[1].children[1].setAttrs({
+                            text: city.name+"\n"+city.x+','+city.y
+                        });
+                        city_hold.push(cg_clone);
+                        cities.add(cg_clone);
+                        inc++;
+                        if ( inc < inits.length ) {
+                            incWidth(inc,inits,others);
+                        } else {
+                            if ( !position.angle )
+                            anim.stop();
+                            cloneCities(others);
+                            try { clearLoad(others) } catch(e) {};
+                            if ( !others )
+                            insertHitCities();
+                        }
+                    }, timer);
+                };
+
+                function initCities(inits, others) {
+                    city_hold = [];
+                    anim.start();
+                    incWidth(0,inits,others);
+                };
+                
+                function proxCities(found_cities, others) {
+                    initCities(found_cities, others);
+                };
+
+                function clearLoad(others) {
+                    loadBox.destroy();
+                    background.moveToBottom();
+                    loaded = true;
+                    if ( !others )
+                    proxCities(other_cities, true);
+                };
+
                 function loadScreen() {
                     background.moveToTop();
                     players.moveToTop();
@@ -546,20 +572,21 @@ Template.traveling.onRendered(function () {
                     loadBox.add(text);
                     proxCities(near_cities, false);
                     movement();
-                }
-
-                function clearLoad(others) {
-                    loadBox.destroy();
-                    background.moveToBottom();
-                    loaded = true;
-                    if ( !others )
-                    proxCities(other_cities, true);
                 };
 
                 loadScreen();
 
             };
-            
+
+            updatePosition = function (pos) {
+                anim.start();
+                position.x = pos.x;
+                position.y = pos.y;
+                movement();
+                if ( !pos.angle )
+                anim.stop();
+            };
+
             $(window).resize(function() {
                 window_size = windowSize();
             });
@@ -573,10 +600,28 @@ Template.traveling.onRendered(function () {
     });
 });
 
+UI.body.onCreated(function() {
+    Tracker.autorun(function() {
+        Positions.find({ "$and": [
+            { owner: Meteor.userId() },
+            { 'city.visiting': true }
+        ]}).observe({
+            added: function(pos) {
+                if ( gameStarted )
+                updatePosition(pos);
+            }
+        });
+        if ( !UserStatus.isIdle() ) {
+            let pos = Positions.findOne({ owner: Meteor.userId() },{ fields: { x: 1, y: 1, angle: 1 } });
+            if ( gameStarted && pos )
+            updatePosition(pos);
+        };
+    });
+});
 
 Template.traveling.onCreated(function () {
     this.visitNext = new ReactiveVar( false );
-    checkLoaded = function () {
+    checkLoaded = function (t) {
         Meteor.setTimeout(function(){
             if ( loaded ) {
                 Tracker.autorun(function() {
@@ -586,16 +631,28 @@ Template.traveling.onCreated(function () {
                     } else {
                         anim.stop();
                     };
-                    let position = Positions.findOne({ owner: Meteor.userId() },{ fields: { angle: 1 } });
-                    if ( !position.angle )
+                    let pos = Positions.findOne({ owner: Meteor.userId() },{ fields: { angle: 1, visit: 1 } });
+                    if ( !pos.angle )
                     stopPlayer();
+                    let visit_next = ( pos.visit ? true : false );
+                    t.visitNext.set(visit_next);
+                    Positions.find({ owner: Meteor.userId() }).observe({
+                        added: function(pos) {
+                            if ( gameStarted )
+                            updatePosition(pos);
+                        },
+                        changed: function(pos) {
+                            if ( gameStarted )
+                            updatePosition(pos);
+                        }
+                    });
                 });
             } else {
-                checkLoaded();
+                checkLoaded(t);
             }
         }, 500);
     };
-    checkLoaded();
+    checkLoaded(this);
 });
 
 Template.traveling.onDestroyed(function () {
@@ -621,17 +678,21 @@ Template.traveling.events({
 
 Template.traveling.helpers({
     next(){
-        const find_pos = Positions.findOne({ angle: { $exists: true } },{ fields: { angle: 1 } });
-        const check_circle = ( Template.instance().visitNext.get() ? "checkbox-marked-circle lit" : "checkbox-blank-circle" );
-        if ( find_pos && find_pos.angle )
-        return "<div class='checkbox visit_next'><span class='mdi mdi-"+check_circle+"'></span></div>";
+        const find_pos = Positions.findOne({ angle: { $exists: true } },{ fields: { angle: 1, city: 1 } });
+        const check_circle = ( Template.instance().visitNext.get() ? "lit" : "" );
+        if ( find_pos && find_pos.angle && !find_pos.city )
+        return "<div class='button visit_next next round-sm "+check_circle+"'>Visit Next</div>";
     },
     visit(){
-        const find_pos = Positions.findOne({ angle: { $exists: true } },{ fields: { angle: 1, city: 1 } });
+        let find_pos = Positions.findOne({},{ fields: { angle: 1, city: 1 } });
         if ( find_pos && find_pos.angle ) {
             const text = ( find_pos.city && find_pos.city.name ? "Visit "+find_pos.city.name : "Stop Here" );
             const stop = ( find_pos.city && find_pos.city.name ? "" : "stop" );
             return "<div class='button visit_city round-sm "+stop+"'>"+text+"</div>";
+        } else if ( find_pos && find_pos.city && find_pos.city.name ) {
+            return "<div class='button visiting round-sm'>"+find_pos.city.name+"</div>";
+        } else if ( find_pos && !find_pos.angle ) {
+            return "<div class='button camping round-sm'>Camping</div>";
         };
     },
     cities(){
@@ -640,18 +701,17 @@ Template.traveling.helpers({
 });
 
 cityInts = [];
-queueTimer = function (queueId,tick,t) {
-	cityInts[queueId] = Meteor.setInterval(function() {
-        tick = tick-1;
-		t.cityInt.set(tick);
-	}, 1000);
+queueTimer = function (t) {
+	cityInts[t.data.name] = Meteor.setInterval(function() {
+		t.cityInt.set(Math.round(t.data.time-(((new Date()).getTime()-t.data.started)/1000)));
+	}, 500);
 };
 
 Template.city.onCreated(function () {
     this.cityInt = new ReactiveVar( 0 );
     try { Meteor.clearTimeout(cityInts[this.data.name]) } catch (e) { };
     Template.instance().cityInt.set(this.data.time);
-    queueTimer(this.data.name,this.data.time,Template.instance());
+    queueTimer(Template.instance());
 });
 
 Template.city.onDestroyed(function () {

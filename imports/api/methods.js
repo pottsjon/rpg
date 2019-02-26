@@ -3,10 +3,13 @@ Meteor.methods({
 		let position = Positions.findOne({ owner: this.userId });
 		const update = ( visit ? { $set: { visit: true } } : { $unset: { visit: "" } } );
 		Positions.update({ _id: position._id },update);
+		/*
+		// created stopNext observe instead
 		if ( visit )
 		position.visit = true;
 		if ( Meteor.isServer )
 		cityTimerStart(position);
+		*/
 	},
 	'startMovement': function(angle, angleDeg) {
 		const time_now = (new Date()).getTime();
@@ -38,7 +41,7 @@ Meteor.methods({
 			started: time_now
 		};
 	},
-	'stopMovement': function(owner) {
+	'stopMovement': function(owner,city) {
 		const time_now = (new Date()).getTime();
 		const pos_owner = ( !owner ? this.userId : owner );
 		let position = Positions.findOne({ owner: pos_owner });
@@ -52,9 +55,9 @@ Meteor.methods({
 			let set_position = {
 				x: position.x,
 				y: position.y
-			}
-			if ( position.city )
-			set_position['city.visiting'] = true;
+			};
+			if ( city )
+			set_position["city"] = city;
 			Positions.update({ owner: pos_owner },{
 				$set: set_position,
 				$unset: {

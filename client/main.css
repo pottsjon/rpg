@@ -31,13 +31,13 @@ img { pointer-events: none; }
 */
 
 #map { background: #885530; }
-#map canvas:nth-child(3) { -moz-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); -webkit-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); }
+#map canvas:nth-child(2) { -moz-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); -webkit-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); }
 
 #menu { text-align: center; background: #111; }
 #top { pointer-events: auto; }
 .time { height: 20px; line-height: 20px; text-align: center; font-size: 11px; background: #a7a7a7; }
 
-#login.box { width: 100%; max-width: 400px; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }
+#login.box { width: 100%; margin: 0 auto; padding: 0 40px; box-sizing: border-box; }
 #login input { -webkit-appearance: none; width: 100%; padding: 12px 10px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #84662a; background: #fff; color: #222; font-size: 16px; -moz-border-radius: 0px; -webkit-border-radius: 0px; border-radius: 0px; }
 #login .button { box-sizing: border-box; width: 100%; text-align: center; -webkit-transition: all 0.5s linear; transition: all 0.5s linear; background: rgba(109, 71, 36, 0.6); border: 2px solid #694223; color: #fcffd6; padding: 15px; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
 #login .button:hover { background: #6a4423; }
@@ -85,8 +85,12 @@ img { pointer-events: none; }
 .visit .checkbox { margin-left: 10px; display: inline-block; vertical-align: middle; }
 .visit .checkbox .mdi { color: #2f562b; font-size: 48px; height: 48px; line-height: 48px; cursor: pointer; display: inline-block; vertical-align: middle; }
 .visit .checkbox .mdi.lit { color: #57ce4b; }
-.visit .button { display: inline-block; vertical-align: middle; padding: 15px 20px; background: #33b76f; color: #154811; font-weight: bold; font-size: 16px; }
-.visit .button.stop { background: #ca3131; color: #f3d7d7; }
+.visit .button { display: inline-block; vertical-align: middle; padding: 15px 20px; background: #33b76f; color: #3a3a3a; font-weight: bold; font-size: 16px; }
+.visit .button.stop { background: #ca3131; }
+.visit .button.visiting { cursor: default; background: #33b1b7; }
+.visit .button.camping { cursor: default; background: #e2803b; }
+.visit .button.next { background: #309045; margin-left: 5px; }
+.visit .button.next.lit { background: #30d253; }
 
 @media ( max-width:600px ) {
     #full .box {

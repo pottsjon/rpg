@@ -36,14 +36,34 @@ nextCity = function (position) {
     lowest = Number.POSITIVE_INFINITY,
     tmp,
     found_city;
-    for ( let i = hitting_cities.length-1; i >= 0 ; i-- ) {
-        tmp = hitting_cities[i].distance;
-        if ( tmp < lowest ) {
-            lowest = tmp;
-            found_city = hitting_cities[i];
-        };
-    }
+    if ( hitting_cities )
+        for ( let i = hitting_cities.length-1; i >= 0 ; i-- ) {
+            tmp = hitting_cities[i].distance;
+            if ( tmp < lowest ) {
+                lowest = tmp;
+                found_city = hitting_cities[i];
+            };
+        }
     return found_city;
+};
+
+stopNext = function () {
+    Positions.find({ "$and": [
+        { city: { $exists: true } },
+        { visit: true }
+    ] },{ fields: {
+        owner: 1,
+        city: 1
+    } }).observe({
+        added: function(position) {
+            cityTimerStop(position.owner);
+            position.city.visiting = true;
+            delete position.city.time;
+            delete position.city.distance;
+            delete position.city.started;
+            Meteor.call('stopMovement', position.owner, position.city);
+        }
+    });
 };
 
 let cityTimers = [];
@@ -51,25 +71,24 @@ cityTimerStart = function (position) {
     try { Meteor.clearTimeout(cityTimers[position.owner]) } catch(e) {};
     let city = nextCity(position);
     if ( city ) {
-        if ( position.visit )
-        city.visiting = true;
         cityTimers[position.owner] = Meteor.setTimeout(function() {
-            Positions.update({
-                owner: position.owner
-            },{
-                $set: {
-                    city: city
-                }
-            });
             const time_now = (new Date()).getTime();
             const find_pos = realPosition(position,position,time_now,time_now);
             position.x = find_pos.x;
             position.y = find_pos.y;
-            if ( position.visit ) {
-                Meteor.call('stopMovement', position.owner);
-            } else {
-                cityTimerStart(position);
-            };
+            position.started = time_now;
+            Positions.update({ "$and": [
+                { owner: position.owner },
+                { angle: { $exists: true } }
+            ] },{
+                $set: {
+                    x: find_pos.x,
+                    y: find_pos.y,
+                    started: time_now,
+                    city: city
+                }
+            });
+            cityTimerStart(position);
         }, city.time*1000);
     };
 };
@@ -100,7 +119,10 @@ tradeTracker = function () {
                 } else if ( inside ) {
                     cityTradeStart(data);
                 } else if ( !inside ) {
-                    Positions.update({ _id: data._id },{
+                    Positions.update({ "$and": [
+                        { _id: data._id },
+                        { angle: { $exists: true } }
+                    ] },{
                         $unset: {
                             city: ""
                         }
@@ -119,9 +141,7 @@ tradeTracker = function () {
         },
         changed: function(data) {
             try { Meteor.clearTimeout(tradeTimers[data.owner]) } catch(e) { };
-            tradeTimers[data.owner] = Meteor.setTimeout(function(){
-                cityTrade(data);
-            }, 5000);
+            cityTrade(data);
         }
     });
 };
