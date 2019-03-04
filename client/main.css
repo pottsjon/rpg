@@ -76,12 +76,13 @@ img { pointer-events: none; }
 .worker { cursor: pointer; padding: 1px 2px; }
 .worker.employee { padding: 2px; background: #c2dbe8; }
 
-.cities { position: absolute; top: 50px; right: 10px; z-index: 100; background: rgba(17, 17, 17, 0.7); color: #efefef; }
-.cities .city { padding: 2px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); text-align: left; }
+.cities { position: absolute; bottom: -1%; left: 0; width: 100%; z-index: 100; background: rgba(40, 120, 189, 0.9); color: #fff; }
+.cities .city { padding: 2px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
 .cities .city span { display: inline-block; vertical-align: middle; }
-.cities .city .name { width: 80px; overflow: hidden; text-overflow: ellipsis; margin-right: 10px; }
+.cities .city .name { font-weight: bold; font-size: 16px; margin: 0 2px; }
+/* .cities .city .name { width: 80px; overflow: hidden; text-overflow: ellipsis; margin-right: 10px; } */
 
-.visit { position: absolute; bottom: 10px; right: 10px; z-index: 100; text-align: right; }
+.visit { position: absolute; bottom: 20px; right: 10px; z-index: 100; text-align: right; }
 .visit .checkbox { margin-left: 10px; display: inline-block; vertical-align: middle; }
 .visit .checkbox .mdi { color: #2f562b; font-size: 48px; height: 48px; line-height: 48px; cursor: pointer; display: inline-block; vertical-align: middle; }
 .visit .checkbox .mdi.lit { color: #57ce4b; }

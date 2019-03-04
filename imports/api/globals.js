@@ -1,6 +1,6 @@
 var collide = require('line-circle-collision');
 
-map_size = { width: 6000, height: 6000 };
+map_size = { width: 4000, height: 4000 };
 
 formatTimer = function(secs) {
     "use strict";
@@ -27,10 +27,12 @@ itemLevel = function (exp) {
 	}
 };
 
-realPosition = function (start_pos,position,server_time,client_start) {
-	const int_dist = ( !position.started ? 0 : ((server_time-position.started+(new Date()).getTime()-client_start)/1000)*5 ),
-	cos = ( !position.angle ? 1 : Math.cos(position.angle) ),
-	sin = ( !position.angle ? 1 : Math.sin(position.angle) );
+realPosition = function (start_pos) {
+	// const int_dist = ( !start_pos.started ? 0 : ((server_time-start_pos.started+(new Date()).getTime()-client_start)/1000)*5 ),
+	const time_now = ( Meteor.isServer ? (new Date()).getTime() : TimeSync.serverTime( (new Date()).getTime() )+TimeSync.roundTripTime() );
+	const int_dist = ( !start_pos.started ? 1 : ((time_now-start_pos.started)/1000)*5 ),
+	cos = ( !start_pos.angle ? 1 : Math.cos(start_pos.angle) ),
+	sin = ( !start_pos.angle ? 1 : Math.sin(start_pos.angle) );
 	return {
 		x: fixEdge(int_dist*cos+start_pos.x, map_size.width),
 		y: fixEdge(int_dist*sin+start_pos.y, map_size.height),
@@ -59,11 +61,11 @@ findNextLines = function (start, angle, angleDeg) {
 	return lines;
 };
 
-findHitCities = function (position) {
+findHitCities = function (start_pos, position) {
 	let hit_cities = [], offset = 0, time_now = (new Date()).getTime();
-	startFindingHits = function (position, next_line) {
+	startFindingHits = function (start_pos, position, next_line) {
 		const line_start = ( !next_line ? { x: position.x, y: position.y } : { x: next_line.x, y: next_line.y } );
-		const find_lines = findNextLines(line_start, position.angle, position.angleDeg);
+		const find_lines = findNextLines(line_start, start_pos.angle, start_pos.angleDeg);
 		find_lines.forEach((line) => {
 			let a = [line[0].x, line[0].y],
 			b = [line[1].x, line[1].y];
@@ -95,13 +97,13 @@ findHitCities = function (position) {
 			});
 			offset = offset+distanceOf(a,b);
 			if ( hit_cities.length < 5 ) {
-				startFindingHits(position, { x: line[2].x, y: line[2].y });
+				startFindingHits(start_pos, position, { x: line[2].x, y: line[2].y });
 			} else {
 				return hit_cities;
 			};
 		});
 	};
-	startFindingHits(position);
+	startFindingHits(start_pos, position);
 	return hit_cities;
 };
 

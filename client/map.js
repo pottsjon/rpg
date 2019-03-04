@@ -5,24 +5,20 @@ windowSize = function () {
 };
 
 // sorta global variables
-var stage, anim, loaded = false, gameStarted, nextTimeout;
+var stage, anim, loaded = false, start_pos, position, cities, gameStarted, nextTimeout;
 Template.traveling.onRendered(function () {
 	Tracker.autorun(function() {
         if ( Meteor.user() ) {
             window_size = windowSize();
             // find the starting position
-            let position = Positions.findOne({ owner: Meteor.userId() });
-            if ( position && !gameStarted ) {
+            start_pos = Positions.findOne({ owner: Meteor.userId() });
+            if ( start_pos && start_pos.x && !gameStarted ) {
                 gameStarted = true;
                 let loading, loadLength, player, city_hold;
-                let start_pos = { x: position.x, y: position.y };
-                let client_start = (new Date()).getTime();
-                let server_time = TimeSync.serverTime( client_start );
 
                 // fix the position based on time since started
-                const find_pos = realPosition(position,position,server_time,client_start);
-                position.x = find_pos.x;
-                position.y = find_pos.y;
+                const find_pos = realPosition(start_pos);
+                position = { x: find_pos.x, y: find_pos.y };
                 
                 const top = position.y-(window_size.height/2)-1000,
                     bottom = position.y+(window_size.height/2)+1000,
@@ -158,7 +154,7 @@ Template.traveling.onRendered(function () {
                 }
                 drawBoxes();
 
-                let cities = new Konva.Layer({
+                cities = new Konva.Layer({
                     x: -position.x+(window_size.width/2),
                     y: -position.y+(window_size.height/2),
                     hitGraphEnabled : false
@@ -215,9 +211,9 @@ Template.traveling.onRendered(function () {
                     walking: [100, 0, 100, 129,
                             200, 0, 200, 129]
                 };
-                const start_anim = ( !position.angle ? "standing" : "walking" );
+                const start_anim = ( !start_pos.angle ? "standing" : "walking" );
                 walker.onload = function() {
-                    const rotation = ( !position.angleDeg ? 0 : position.angleDeg-90 );
+                    const rotation = ( !start_pos.angleDeg ? 0 : start_pos.angleDeg-90 );
                     player = new Konva.Sprite({
                         x: window_size.width/2,
                         y: window_size.height/2,
@@ -337,19 +333,19 @@ Template.traveling.onRendered(function () {
                 const move_speed = 5.14/window.devicePixelRatio;
                 movement = function () {
                     if ( loaded ) {
-                        const find_pos = realPosition(start_pos,position,server_time,client_start);
+                        const find_pos = realPosition(start_pos);
+                        cities.setAttrs({ x: -find_pos.x+(window_size.width/2), y: -find_pos.y+(window_size.height/2) });
                         position.x = find_pos.x;
                         position.y = find_pos.y;
-                        cities.setAttrs({ x: -position.x+(window_size.width/2), y: -position.y+(window_size.height/2) });
-                        if ( position.angle )
+                        if ( start_pos.angle )
                         background.move({ x: -find_pos.cos/move_speed, y: -find_pos.sin/move_speed });
                     };
                 }
 
                 loaded = false;
                 function update(frame) {
-                    if ( loaded && position.angle ) {
-                        let find_angle = ( !position.angleDeg ? "" : 'A: '+Math.round(position.angleDeg)+'°' );
+                    if ( loaded ) {
+                        let find_angle = ( !start_pos.angleDeg ? "" : 'A: '+Math.round(start_pos.angleDeg)+'°' );
                         textX.text('X: '+Math.round(position.x));
                         textY.text('Y: '+Math.round(position.y));
                         textA.text(find_angle);
@@ -357,7 +353,7 @@ Template.traveling.onRendered(function () {
                         showCities();
                         movement();
 
-                        // background boxes only move 50 pixels (their size) in either direction before reseting
+                        // background boxes only move box_size amount (their size) in either direction before reseting
                         if ( background.attrs.x < -box_size || background.attrs.x > box_size )
                             background.attrs.x = 0;
                         if ( background.attrs.y < -box_size || background.attrs.y > box_size )
@@ -379,9 +375,9 @@ Template.traveling.onRendered(function () {
                 }
 
                 insertHitCities = function () {
-                    if ( position.angle ) {
+                    if ( start_pos.angle ) {
                         hitCities.remove({},function(err, count) {
-                            let hitting_cities = findHitCities(position);
+                            let hitting_cities = findHitCities(start_pos, position);
                             hitting_cities.forEach((city) => {
                                 hitCities.insert(city,function(err, count) {               
                                 });
@@ -412,7 +408,6 @@ Template.traveling.onRendered(function () {
                 }
                 window.addEventListener('resize', fixWindowSize);
 
-                let doc_map = document.getElementById('map');
                 function clearClick() {
                     Meteor.setTimeout(function(){
                         clicked = false;
@@ -420,14 +415,13 @@ Template.traveling.onRendered(function () {
                 }
 
                 stopPlayer = function () {
-                    position.angle = false;
-                    position.angleDeg = false;
                     hitCities.remove({});
                     player.setAttrs({ animation: 'standing', rotation: 0 });
                 };
 
                 stopMovement = function () {
                     Meteor.call('stopMovement');
+                    stopPlayer();
                 };
 
                 function startMovement(e) {
@@ -438,28 +432,32 @@ Template.traveling.onRendered(function () {
                     const angleDeg = Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI;
                     Meteor.call('startMovement', angle, angleDeg, (error, result) => {
                         if ( result ) {
+                            start_pos = result;
                             position.x = result.x;
                             position.y = result.y;
-                            position.started = result.started;
-                            position.angle = angle;
-                            position.angleDeg = angleDeg;
-                            start_pos = { x: result.x, y: result.y };
-                            client_start = (new Date()).getTime();
-                            server_time = TimeSync.serverTime( client_start );
                             insertHitCities();
                             player.setAttrs({ animation: 'walking', rotation: angleDeg-90 });
+                            animStart = true;
+                            animStartDep.changed();
                         };
                     });
                     clearClick();
                 }
 
+                let doc_map = document.getElementById('map');
                 doc_map.addEventListener("touchstart", e => {
-                    if ( !clicked )
-                    startMovement(e);    
+                    if ( !clicked ) {
+                        animStart = false;
+                        animStartDep.changed();
+                        startMovement(e);
+                    };
                 });
                 doc_map.addEventListener("click", e => {
-                    if ( !clicked )
-                    startMovement(e);
+                    if ( !clicked ) {
+                        animStart = false;
+                        animStartDep.changed();
+                        startMovement(e);
+                    };
                 });
                 /*
                 doc_map.addEventListener("contextmenu", e => {
@@ -511,7 +509,7 @@ Template.traveling.onRendered(function () {
                         if ( inc < inits.length ) {
                             incWidth(inc,inits,others);
                         } else {
-                            if ( !position.angle )
+                            if ( !start_pos.angle )
                             anim.stop();
                             cloneCities(others);
                             try { clearLoad(others) } catch(e) {};
@@ -575,16 +573,12 @@ Template.traveling.onRendered(function () {
                 };
 
                 loadScreen();
-
-            };
-
-            updatePosition = function (pos) {
-                anim.start();
-                position.x = pos.x;
-                position.y = pos.y;
-                movement();
-                if ( !pos.angle )
-                anim.stop();
+            } else if ( start_pos && !start_pos.angle && start_pos.x && gameStarted ) {
+                position.x = start_pos.x;
+                position.y = start_pos.y;
+                cities.setAttrs({ x: -start_pos.x+(window_size.width/2), y: -start_pos.y+(window_size.height/2) });
+                hitCities.remove({});
+                stopPlayer();
             };
 
             $(window).resize(function() {
@@ -600,26 +594,7 @@ Template.traveling.onRendered(function () {
     });
 });
 
-UI.body.onCreated(function() {
-    Tracker.autorun(function() {
-        Positions.find({ "$and": [
-            { owner: Meteor.userId() },
-            { 'city.visiting': true }
-        ]}).observe({
-            added: function(pos) {
-                if ( gameStarted )
-                updatePosition(pos);
-            }
-        });
-        if ( !UserStatus.isIdle() ) {
-            let pos = Positions.findOne({ owner: Meteor.userId() },{ fields: { x: 1, y: 1, angle: 1 } });
-            if ( gameStarted && pos )
-            updatePosition(pos);
-        };
-    });
-});
-
-Template.traveling.onCreated(function () {
+Template.traveling.onRendered(function () {
     this.visitNext = new ReactiveVar( false );
     checkLoaded = function (t) {
         Meteor.setTimeout(function(){
@@ -631,21 +606,9 @@ Template.traveling.onCreated(function () {
                     } else {
                         anim.stop();
                     };
-                    let pos = Positions.findOne({ owner: Meteor.userId() },{ fields: { angle: 1, visit: 1 } });
-                    if ( !pos.angle )
-                    stopPlayer();
-                    let visit_next = ( pos.visit ? true : false );
+                    let pos = Positions.findOne({ owner: Meteor.userId() },{ fields: { visit: 1 } });
+                    let visit_next = ( pos && pos.visit ? true : false );
                     t.visitNext.set(visit_next);
-                    Positions.find({ owner: Meteor.userId() }).observe({
-                        added: function(pos) {
-                            if ( gameStarted )
-                            updatePosition(pos);
-                        },
-                        changed: function(pos) {
-                            if ( gameStarted )
-                            updatePosition(pos);
-                        }
-                    });
                 });
             } else {
                 checkLoaded(t);
@@ -662,7 +625,7 @@ Template.traveling.onDestroyed(function () {
 
 Template.traveling.events({
     'click .visit_next'(e,t) {
-        if ( t.visitNext.get() ) {
+        if (  t.visitNext.get() ) {
             t.visitNext.set(false);
             Meteor.call('visitNext', false);
         } else {
@@ -679,7 +642,7 @@ Template.traveling.events({
 Template.traveling.helpers({
     next(){
         const find_pos = Positions.findOne({ angle: { $exists: true } },{ fields: { angle: 1, city: 1 } });
-        const check_circle = ( Template.instance().visitNext.get() ? "lit" : "" );
+        const check_circle = ( Template.instance().visitNext && Template.instance().visitNext.get() ? "lit" : "" );
         if ( find_pos && find_pos.angle && !find_pos.city )
         return "<div class='button visit_next next round-sm "+check_circle+"'>Visit Next</div>";
     },
@@ -696,7 +659,7 @@ Template.traveling.helpers({
         };
     },
     cities(){
-        return hitCities.find({ time: { $gt: 0 } },{ sort: { distance: 1 }, limit: 3 });
+        return hitCities.find({ time: { $gt: 0 } },{ sort: { distance: 1 }, limit: 1 });
     }
 });
 
@@ -719,8 +682,11 @@ Template.city.onDestroyed(function () {
 });
 
 Template.city.helpers({
-    time(){
+    data(){
         let progress = Template.instance().cityInt.get();
-        return formatTimer(progress);
+        let format = moment((new Date()).getTime()+(progress*1000)).fromNow();
+        return "<span>Arriving at <span class='name'>"+this.name+"</span> "+format+"</span>"
+        // return "<span class='name'>"+this.name+"</span><span>"+format+"</span>"
+        // return formatTimer(progress);
     }
 });

@@ -31,8 +31,37 @@ startingCity = function (userId) {
     });
 };
 
+var navSkill = [];
+awardMovement = function (old_pos, new_pos) {
+    const distance = Math.round(distanceOf([old_pos.x, old_pos.y], [new_pos.x, new_pos.y])/10);
+    if ( distance >= 1 ) {
+        if ( !navSkill[old_pos.owner] ) {
+        const skill = Skills.findOne({ "$and": [
+            { owner: old_pos.owner },
+            { name: "Navigation" }
+        ]},{ fields: { amount: 1, level: 1 } });
+        navSkill[old_pos.owner] = ( !skill || !skill.amount ? 0 : skill.amount );
+        };
+        const update_amount = navSkill[old_pos.owner]-(-distance);
+        navSkill[old_pos.owner] = update_amount;
+        const update_level = itemLevel(update_amount);
+        const skill_set = {
+            amount: update_amount,
+            level: update_level
+        };
+        Skills.update({ "$and": [
+            { owner: old_pos.owner },
+            { name: "Navigation" }
+        ]},{
+            $set: skill_set
+        },{ upsert: true },
+        function(err, count) {
+        });
+    };
+};
+
 nextCity = function (position) {
-    let hitting_cities = findHitCities(position),
+    let hitting_cities = findHitCities(position, position),
     lowest = Number.POSITIVE_INFINITY,
     tmp,
     found_city;
@@ -73,7 +102,8 @@ cityTimerStart = function (position) {
     if ( city ) {
         cityTimers[position.owner] = Meteor.setTimeout(function() {
             const time_now = (new Date()).getTime();
-            const find_pos = realPosition(position,position,time_now,time_now);
+            const find_pos = realPosition(position);
+            awardMovement(position,find_pos);
             position.x = find_pos.x;
             position.y = find_pos.y;
             position.started = time_now;
@@ -94,9 +124,8 @@ cityTimerStart = function (position) {
 };
 
 positionTracker = function () {
-    const time_now = (new Date()).getTime();
     Positions.find({ started: { $exists: true } }).fetch().forEach((position) => {
-        const find_pos = realPosition(position,position,time_now,time_now);
+        const find_pos = realPosition(position);
         position.x = find_pos.x;
         position.y = find_pos.y;
         cityTimerStart(position);
@@ -111,8 +140,7 @@ tradeTracker = function () {
         cityTradeStart = function (data) {
             tradeTimers[data.owner] = Meteor.setTimeout(function(){
                 counter++
-                const time_now = (new Date()).getTime();
-                const find_pos = realPosition(data,data,time_now,time_now);
+                const find_pos = realPosition(data);
                 const inside = inCircle(find_pos, { x: data.city.x, y: data.city.y }, data.city.radius);
                 if ( counter == 10 ) {
                     cityTrade(data);
@@ -319,7 +347,7 @@ checkCities = function () {
                 });
             }
         }
-        */
+        // good spacing but I want them a little closer
         for ( let i = 200; map_size.height-200 >= i; i+=500 ) {
             for ( let o = 200; map_size.width-200 >= o; o+=500 ) {
                 const chance = Math.floor(Math.random()*100-1);
@@ -329,6 +357,26 @@ checkCities = function () {
                     const offset_i = Math.floor(Math.random()*150+50);
                     data.push({
                         x: o+offset_o,
+                        y: i+offset_i,
+                        radius: radius*1,
+                        name: Fake.user().surname
+                    });
+                };
+            }
+        }
+        */
+       let row = 1;
+        for ( let i = 100; map_size.height-100 >= i; i+=450 ) {
+            row++
+            for ( let o = 100; map_size.width-300 >= o; o+=400 ) {
+                const chance = Math.floor(Math.random()*100-1);
+                let row_extra = ( row % 2 ? 150 : 0 )
+                if ( chance > 10 ) {
+                    const radius = Math.floor(Math.random()*50)+50;
+                    const offset_o = Math.floor(Math.random()*100+50);
+                    const offset_i = Math.floor(Math.random()*150+50);
+                    data.push({
+                        x: o+offset_o+row_extra,
                         y: i+offset_i,
                         radius: radius*1,
                         name: Fake.user().surname

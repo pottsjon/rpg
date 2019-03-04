@@ -3,30 +3,20 @@ Meteor.methods({
 		let position = Positions.findOne({ owner: this.userId });
 		const update = ( visit ? { $set: { visit: true } } : { $unset: { visit: "" } } );
 		Positions.update({ _id: position._id },update);
-		/*
-		// created stopNext observe instead
-		if ( visit )
-		position.visit = true;
-		if ( Meteor.isServer )
-		cityTimerStart(position);
-		*/
 	},
 	'startMovement': function(angle, angleDeg) {
-		const time_now = (new Date()).getTime();
 		let position = Positions.findOne({ owner: this.userId });
-		if ( position.angle ) {
-			const time_int = (time_now-position.started)/1000;
-			const int_dist = time_int*5;
-			position.x = fixEdge(int_dist*Math.cos(position.angle)+position.x, map_size.width);
-			position.y = fixEdge(int_dist*Math.sin(position.angle)+position.y, map_size.height);
-		};
+		const time_now = (new Date()).getTime();		
+		const find_pos = realPosition(position);
 		let set_position = {
-			x: position.x,
-			y: position.y,
+			x: find_pos.x,
+			y: find_pos.y,
 			angle: angle,
 			angleDeg: angleDeg,
 			started: time_now
 		};
+		if ( Meteor.isServer && position.angle )
+		awardMovement(position,set_position);
 		if ( position.city )
 		set_position['city.visiting'] = false;
 		Positions.update({ _id: position._id },{
@@ -35,26 +25,20 @@ Meteor.methods({
 		set_position.owner = this.userId;
 		if ( Meteor.isServer )
 		cityTimerStart(set_position);
-		return {
-			x: position.x,
-			y: position.y,
-			started: time_now
-		};
+		return set_position;
 	},
 	'stopMovement': function(owner,city) {
-		const time_now = (new Date()).getTime();
 		const pos_owner = ( !owner ? this.userId : owner );
 		let position = Positions.findOne({ owner: pos_owner });
 		if ( position.angle ) {
-			if ( Meteor.isServer )
-			cityTimerStop(pos_owner);
-			const time_int = (time_now-position.started)/1000;
-			const int_dist = time_int*5;
-			position.x = fixEdge(int_dist*Math.cos(position.angle)+position.x, map_size.width);
-			position.y = fixEdge(int_dist*Math.sin(position.angle)+position.y, map_size.height);
+			const find_pos = realPosition(position);
 			let set_position = {
-				x: position.x,
-				y: position.y
+				x: find_pos.x,
+				y: find_pos.y
+			};
+			if ( Meteor.isServer ) {
+			cityTimerStop(pos_owner);
+			awardMovement(position,set_position);
 			};
 			if ( city )
 			set_position["city"] = city;

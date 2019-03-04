@@ -69,9 +69,9 @@ UI.body.onRendered(function() {
 Deps.autorun(function(c) {
 	try {
 	UserStatus.startMonitor({
-	threshold: 1000*60*10,
-	interval: 1000*60*5,
-	idleOnBlur: true
+		threshold: 1000*60*10,
+		interval: 1000*60*2,
+		idleOnBlur: true
 	});
 	return c.stop();
 	} catch (e) {}
