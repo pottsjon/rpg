@@ -31,22 +31,13 @@ img { pointer-events: none; }
 */
 
 #map { background: #885530; }
-<<<<<<< HEAD
 #map canvas:nth-child(2) { -moz-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); -webkit-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); }
-=======
-#map canvas:nth-child(3) { z-index: 20; -moz-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); -webkit-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); }
-#map canvas:nth-child(2) { z-index: 30; }
->>>>>>> 5ea7edbc72a47be2231985b64fb0bbbae4e3f8c7
 
 #menu { text-align: center; background: #111; }
 #top { pointer-events: auto; }
 .time { height: 20px; line-height: 20px; text-align: center; font-size: 11px; background: #a7a7a7; }
 
-<<<<<<< HEAD
 #login.box { width: 100%; margin: 0 auto; padding: 0 40px; box-sizing: border-box; }
-=======
-#login.box { width: 100%; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }
->>>>>>> 5ea7edbc72a47be2231985b64fb0bbbae4e3f8c7
 #login input { -webkit-appearance: none; width: 100%; padding: 12px 10px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #84662a; background: #fff; color: #222; font-size: 16px; -moz-border-radius: 0px; -webkit-border-radius: 0px; border-radius: 0px; }
 #login .button { box-sizing: border-box; width: 100%; text-align: center; -webkit-transition: all 0.5s linear; transition: all 0.5s linear; background: rgba(109, 71, 36, 0.6); border: 2px solid #694223; color: #fcffd6; padding: 15px; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
 #login .button:hover { background: #6a4423; }
