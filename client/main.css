@@ -20,24 +20,23 @@ img { pointer-events: none; }
 
 .half { width: 50%; display: inline-block; box-sizing: border-box; }
 
-#full, .traveling { height: 100%; background: #ccc; }
-#full .box, .traveling .box { width: 100%; max-width: 500px; height: 100%; position: relative; background: #a7a7a7; z-index: 110; }
-.traveling .box { display: inline-block; background: #885530; }
-#full.map .box { background: none; pointer-events: none; }
-.traveling { position: absolute; top: 0; left: 0; width: 100%; height: 99%; text-align: center; }
-/*
-// turned off for test
-#full .box { margin: auto; }
-*/
+.traveling { background: #ccc; position: fixed; top: 0; left: 0; width: 100%; height: 100%; text-align: center;  }
+.traveling .box { display: inline-block; background: #885530; width: 100%; max-width: 500px; height: 100%; position: relative; z-index: 110; }
+#overlay { height: 100%; padding: 30px 0 60px 0; box-sizing: border-box; }
+#overlay .box { width: 94%; max-width: 480px; max-height: 100%; overflow: auto; position: relative; background: #a7a7a7; z-index: 110; }
+#overlay .background { width: 100%; height: 200px; background: #5db0d0 url(/assets/bg-village.png) no-repeat center center; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover; }
 
-#map { background: #885530; }
+#map { cursor: url('/assets/cursor-walk.png'), auto; background: #885530; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
 #map canvas:nth-child(2) { -moz-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); -webkit-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); }
 
 #menu { text-align: center; background: #111; }
-#top { pointer-events: auto; }
-.time { height: 20px; line-height: 20px; text-align: center; font-size: 11px; background: #a7a7a7; }
+#top  { height: 28px; line-height: 28px; font-size: 12px; pointer-events: auto; z-index: 1000; position: absolute; top: 0; left: 0; width: 100%; padding: 0 0 0 10px; box-sizing: border-box; background: #462a0d; color: #ffffff; text-align: left; }
+#top .time { display: inline-block; }
+#top .data { float: right; }
+#top .data .coords { display: inline-block; vertical-align: top; }
+#top .data .menu-button { height: 28px; line-height: 28px; font-size: 28px; padding: 0 5px; display: inline-block; vertical-align: top; cursor: pointer; }
 
-#login.box { width: 100%; margin: 0 auto; padding: 0 40px; box-sizing: border-box; }
+#login.box { background: none; width: 100%; margin: 0 auto; padding: 0 40px; box-sizing: border-box; }
 #login input { -webkit-appearance: none; width: 100%; padding: 12px 10px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #84662a; background: #fff; color: #222; font-size: 16px; -moz-border-radius: 0px; -webkit-border-radius: 0px; border-radius: 0px; }
 #login .button { box-sizing: border-box; width: 100%; text-align: center; -webkit-transition: all 0.5s linear; transition: all 0.5s linear; background: rgba(109, 71, 36, 0.6); border: 2px solid #694223; color: #fcffd6; padding: 15px; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
 #login .button:hover { background: #6a4423; }
@@ -53,7 +52,7 @@ img { pointer-events: none; }
 .skill .amount, .item .amount, .leader .amount { float: right; }
 .task .amount { margin-left: 5px; font-size: 12px; font-weight: normal; }
 
-.logs { max-height: 300px; height: 100%; overflow-y: auto; }
+.logs { max-height: 300px; overflow-y: auto; }
 .logs .log { padding: 1px 2px; }
 .logs .log .timestamp { margin-right: 2px; font-size: 11px; font-weight: bold; color: #484848; }
 
@@ -76,27 +75,24 @@ img { pointer-events: none; }
 .worker { cursor: pointer; padding: 1px 2px; }
 .worker.employee { padding: 2px; background: #c2dbe8; }
 
-.cities { position: absolute; bottom: -1%; left: 0; width: 100%; z-index: 100; background: rgba(40, 120, 189, 0.9); color: #fff; }
-.cities .city { padding: 2px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
-.cities .city span { display: inline-block; vertical-align: middle; }
-.cities .city .name { font-weight: bold; font-size: 16px; margin: 0 2px; }
+.cities { position: absolute; bottom: 48px; left: 0; width: 100%; z-index: 100; background: rgba(40, 120, 189, 0.9); color: #fff; }
+.cities .city { height: 26px; line-height: 26px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+.cities .city span { display: inline-block; vertical-align: middle; margin: 0 3px; }
+.cities .city .name { font-weight: bold; font-size: 16px; }
 /* .cities .city .name { width: 80px; overflow: hidden; text-overflow: ellipsis; margin-right: 10px; } */
 
-.visit { position: absolute; bottom: 20px; right: 10px; z-index: 100; text-align: right; }
+.visit { position: absolute; bottom: 0; left: 0; z-index: 100; width: 100%; text-align: center; font-size: 0; }
 .visit .checkbox { margin-left: 10px; display: inline-block; vertical-align: middle; }
 .visit .checkbox .mdi { color: #2f562b; font-size: 48px; height: 48px; line-height: 48px; cursor: pointer; display: inline-block; vertical-align: middle; }
 .visit .checkbox .mdi.lit { color: #57ce4b; }
-.visit .button { display: inline-block; vertical-align: middle; padding: 15px 20px; background: #33b76f; color: #3a3a3a; font-weight: bold; font-size: 16px; }
-.visit .button.stop { background: #ca3131; }
-.visit .button.visiting { cursor: default; background: #33b1b7; }
-.visit .button.camping { cursor: default; background: #e2803b; }
-.visit .button.next { background: #309045; margin-left: 5px; }
+.visit .button { width: 100%; box-sizing: border-box; display: inline-block; vertical-align: top; padding: 15px 20px; background: #33b76f; color: rgba(0, 0, 0, 0.6); font-weight: bold; font-size: 16px; }
+.visit .button.stop { background: #ca3131; width: 50%; }
+.visit .button.visiting { cursor: default; background: #33b1b7; width: 100%; }
+.visit .button.camping { cursor: default; background: #e2803b; width: 100%; }
+.visit .button.next { background: #309045; width: 50%; }
 .visit .button.next.lit { background: #30d253; }
 
 @media ( max-width:600px ) {
-    #full .box {
-        max-width: none;
-    }
     #menu { 
         overflow: hidden;
         height: 26px;

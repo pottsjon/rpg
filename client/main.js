@@ -77,6 +77,22 @@ Deps.autorun(function(c) {
 	} catch (e) {}
 });
 
+UI.body.helpers({
+	showTravel(){
+		if ( Meteor.user() )
+		return true
+	}
+});
+
+Template.world.helpers({
+	showCity(){
+		let visiting = Positions.findOne({ 'city.visiting': true });
+		console.log(visiting);
+		if ( visiting )
+		return true
+	}
+});
+
 Template.leaderboard.onCreated(function () {
 	leadersSub = Meteor.subscribe('leaders');
 	this.leaderSkip = new ReactiveVar( 0 );
@@ -287,16 +303,11 @@ Template.worker.events({
 });
 
 Template.menu.helpers({
-	time() {
-		timeDep.depend();
-		if ( time )
-		return moment(time).format('h:mm:ssa');
-	},
 	menu() {
 		const data = [
 			{
-				text: "Manage",
-				route: '/'
+				text: "Town",
+				route: '/world'
 			},
 			{
 				text: "Gather",
@@ -310,14 +321,12 @@ Template.menu.helpers({
 				text: "Hire",
 				route: '/hiring'
 			},
-			{
-				text: "Map",
-				route: '/land'
-			},
+			/*
 			{
 				text: "Leaderboard",
 				route: '/leaderboard'
 			},
+			*/
 		]
 		return data
 	}

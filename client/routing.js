@@ -15,7 +15,21 @@ Router.route('/', {
         return []
 	},
 	onBeforeAction: function() {
-		animStart = false;
+		animStart = true;
+		animStartDep.changed();
+		this.next();
+	},
+	action: function(){
+		this.render();
+	}
+});
+
+Router.route('/management', {
+	waitOn: function() {
+        return []
+	},
+	onBeforeAction: function() {
+		animStart = true;
 		animStartDep.changed();
 		this.next();
 	},
@@ -66,7 +80,7 @@ Router.route('/hiring', {
 	}
 });
 
-Router.route('/land', {
+Router.route('/world', {
 	waitOn: function() {
         return [];
 	},
@@ -76,7 +90,7 @@ Router.route('/land', {
 		this.next();
 	},
 	action: function(){
-		this.render('land');
+		this.render('world');
 	}
 });
 

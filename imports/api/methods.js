@@ -27,7 +27,7 @@ Meteor.methods({
 		cityTimerStart(set_position);
 		return set_position;
 	},
-	'stopMovement': function(owner,city) {
+	'stopMovement': function(owner, city) {
 		const pos_owner = ( !owner ? this.userId : owner );
 		let position = Positions.findOne({ owner: pos_owner });
 		if ( position.angle ) {
@@ -40,8 +40,15 @@ Meteor.methods({
 			cityTimerStop(pos_owner);
 			awardMovement(position,set_position);
 			};
-			if ( city )
-			set_position["city"] = city;
+			if ( city) {
+			city["visiting"] = true;
+			} else if ( position.city ) {		
+			try { delete position.city.time } catch(e) {};
+			try { delete position.city.distance } catch(e) {};
+			try { delete position.city.started } catch(e) {};
+			position.city["visiting"] = true;
+			};
+			set_position["city"] = ( city ? city : position.city );
 			Positions.update({ owner: pos_owner },{
 				$set: set_position,
 				$unset: {

@@ -19,7 +19,7 @@ workforceAdd = function (count) {
 };
 
 startingCity = function (userId) {
-	const city_list = Cities.find({}).fetch();
+	const city_list = Cities.find({ type: "City" }).fetch();
 	const choice = Math.floor(Math.random()*(city_list.length-1));
     const city = city_list[choice];
     city.visiting = true;
@@ -366,21 +366,37 @@ checkCities = function () {
         }
         */
        let row = 1;
-        for ( let i = 100; map_size.height-100 >= i; i+=450 ) {
+       let chance = 5;
+       let temples = [1,2,3,4,5,6];
+        for ( let i = 125; map_size.height >= i; i+=425 ) {
             row++
-            for ( let o = 100; map_size.width-300 >= o; o+=400 ) {
-                const chance = Math.floor(Math.random()*100-1);
-                let row_extra = ( row % 2 ? 150 : 0 )
-                if ( chance > 10 ) {
-                    const radius = Math.floor(Math.random()*50)+50;
-                    const offset_o = Math.floor(Math.random()*100+50);
-                    const offset_i = Math.floor(Math.random()*150+50);
-                    data.push({
+            for ( let o = 125; map_size.width >= o; o+=425 ) {
+                chance += 5;
+                let row_extra = ( row % 2 ? 200 : 0 );
+                const offset_o = Math.floor(Math.random()*30+20);
+                const offset_i = Math.floor(Math.random()*80+20);
+                const roll = Math.floor(Math.random()*90+10);
+                if ( roll <= 80 ) {
+                    let data_push = {
                         x: o+offset_o+row_extra,
-                        y: i+offset_i,
-                        radius: radius*1,
-                        name: Fake.user().surname
-                    });
+                        y: i+offset_i
+                    };
+                    if ( roll > chance || temples.length == 0 ) {
+                        data_push["radius"] = Math.floor(Math.random()*50)+50;
+                        data_push["name"] = Fake.user().surname;
+                        data_push["type"] = "City";
+                    } else if ( roll <= chance && temples.length > 0 ) {
+                        chance = 0;
+                        const num = Math.floor(Math.random()*temples.length+1);
+                        data_push["radius"] = 100;
+                        data_push["name"] = "Temple "+temples[num-1];
+                        data_push["type"] = "Temple";
+                        data_push["level"] = temples[num-1];
+                        temples.splice(num-1, 1);
+                    };
+                    data.push(data_push);
+                    if ( chance > 60 )
+                    chance = 0;
                 };
             }
         }

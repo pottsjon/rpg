@@ -1,6 +1,6 @@
 var collide = require('line-circle-collision');
 
-map_size = { width: 4000, height: 4000 };
+map_size = { width: 3000, height: 3000 };
 
 formatTimer = function(secs) {
     "use strict";
@@ -29,7 +29,7 @@ itemLevel = function (exp) {
 
 realPosition = function (start_pos) {
 	// const int_dist = ( !start_pos.started ? 0 : ((server_time-start_pos.started+(new Date()).getTime()-client_start)/1000)*5 ),
-	const time_now = ( Meteor.isServer ? (new Date()).getTime() : TimeSync.serverTime( (new Date()).getTime() )+TimeSync.roundTripTime() );
+	const time_now = ( Meteor.isServer ? (new Date()).getTime() : TimeSync.serverTime( (new Date()).getTime() ) );
 	const int_dist = ( !start_pos.started ? 1 : ((time_now-start_pos.started)/1000)*5 ),
 	cos = ( !start_pos.angle ? 1 : Math.cos(start_pos.angle) ),
 	sin = ( !start_pos.angle ? 1 : Math.sin(start_pos.angle) );
@@ -62,7 +62,7 @@ findNextLines = function (start, angle, angleDeg) {
 };
 
 findHitCities = function (start_pos, position) {
-	let hit_cities = [], offset = 0, time_now = (new Date()).getTime();
+	let hit_cities = [], offset = 0, time_now = (new Date()).getTime(), count = 0;
 	startFindingHits = function (start_pos, position, next_line) {
 		const line_start = ( !next_line ? { x: position.x, y: position.y } : { x: next_line.x, y: next_line.y } );
 		const find_lines = findNextLines(line_start, start_pos.angle, start_pos.angleDeg);
@@ -96,7 +96,8 @@ findHitCities = function (start_pos, position) {
 				};
 			});
 			offset = offset+distanceOf(a,b);
-			if ( hit_cities.length < 5 ) {
+			count++
+			if ( hit_cities.length < 5 || count < 10 ) {
 				startFindingHits(start_pos, position, { x: line[2].x, y: line[2].y });
 			} else {
 				return hit_cities;

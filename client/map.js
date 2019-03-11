@@ -1,6 +1,8 @@
 windowSize = function () {
-	const width = document.getElementById("map").offsetWidth;
-	const height = $(window).height();
+    const width = document.getElementById("map").offsetWidth;
+    const height = $(window).height();
+    // width = ( width > map_size.width ? map_size.width : width );
+    // height = ( height > map_size.height ? map_size.height : height );
 	return { width: width, height: height };
 };
 
@@ -19,11 +21,12 @@ Template.traveling.onRendered(function () {
                 // fix the position based on time since started
                 const find_pos = realPosition(start_pos);
                 position = { x: find_pos.x, y: find_pos.y };
-                
-                const top = position.y-(window_size.height/2)-1000,
-                    bottom = position.y+(window_size.height/2)+1000,
-                    left = position.x-(window_size.width/2)-1000,
-                    right = position.x+(window_size.width/2)+1000;
+                playerPosition = { x: find_pos.x, y: find_pos.y };
+                playerPositionDep.changed();
+                const top = position.y-(window_size.height/2)-200,
+                    bottom = position.y+(window_size.height/2)+200,
+                    left = position.x-(window_size.width/2)-200,
+                    right = position.x+(window_size.width/2)+200;
 
                 let near_cities = Cities.find({ "$and": [
                     { "$and": [{ x: { $gte: left } },{ x: { $lte: right } }] },
@@ -98,8 +101,15 @@ Template.traveling.onRendered(function () {
                 ] }).fetch().forEach((city) => {
                     near_cities.push(city);
                 });
-            
-                // finds duplicates, opaque backgrounds show when mulitples exist
+
+                // finds duplicates within near cities, opaque backgrounds show when mulitples exist
+                near_cities = near_cities.filter((city, index, self) =>
+                    index === self.findIndex((t) => (
+                        t.name === city.name
+                    ))
+                )
+
+                // finds duplicates between near and other cities, opaque backgrounds show when mulitples exist
                 for ( let n = 0; near_cities.length > n; n++ ) {
                     for ( let o = 0; other_cities.length > o; o++ ) {
                         if ( near_cities[n].name == other_cities[o].name )
@@ -162,42 +172,7 @@ Template.traveling.onRendered(function () {
                 stage.add(cities);
 
                 let city_list = cities.getChildren();
-                
                 const city_group = new Konva.Group({});
-
-                let imageObj = new Image(),
-                village;
-                imageObj.onload = function() {
-                    village = new Konva.Image({
-                        image: imageObj
-                    });
-                    city_group.add(village);
-
-                    const label = new Konva.Label({
-                        y: -30
-                    });
-                
-                    const tag = new Konva.Tag({
-                        fill: '#111',
-                        lineJoin: 'round',
-                        pointerDirection: 'down',
-                        pointerWidth: 5,
-                        pointerHeight: 5,
-                        cornerRadius: 5
-                    });
-                    label.add(tag);
-                
-                    const text = new Konva.Text({
-                        fontSize: 16,
-                        fill: 'white',
-                        padding: 5,
-                        align: 'center'
-                    });
-                    label.add(text);
-                        
-                    city_group.add(label);
-                };
-                imageObj.src = '/assets/village.png';
 
                 let players = new Konva.Layer({
                     hitGraphEnabled : false
@@ -234,22 +209,6 @@ Template.traveling.onRendered(function () {
                     player.start();
                 };
                 walker.src = "/assets/walking.png";
-
-                let textX = new Konva.Text({
-                    text: 'X: '+Math.round(position.x),
-                    x: 10,
-                    y: 50,
-                    fontSize: 20
-                });
-                players.add(textX);
-
-                let textY = new Konva.Text({
-                    text: 'Y: '+Math.round(position.y),
-                    x: 10,
-                    y: 70,
-                    fontSize: 20
-                });
-                players.add(textY);
 
                 let textA = new Konva.Text({
                     x: 10,
@@ -330,15 +289,17 @@ Template.traveling.onRendered(function () {
                     }
                 }
 
-                const move_speed = 5.14/window.devicePixelRatio;
+                // const move_speed = 6/window.devicePixelRatio;
                 movement = function () {
                     if ( loaded ) {
                         const find_pos = realPosition(start_pos);
                         cities.setAttrs({ x: -find_pos.x+(window_size.width/2), y: -find_pos.y+(window_size.height/2) });
                         position.x = find_pos.x;
                         position.y = find_pos.y;
+                        playerPosition = { x: find_pos.x, y: find_pos.y };
+                        playerPositionDep.changed();
                         if ( start_pos.angle )
-                        background.move({ x: -find_pos.cos/move_speed, y: -find_pos.sin/move_speed });
+                        background.move({ x: -find_pos.cos/6, y: -find_pos.sin/6 });
                     };
                 }
 
@@ -346,8 +307,6 @@ Template.traveling.onRendered(function () {
                 function update(frame) {
                     if ( loaded ) {
                         let find_angle = ( !start_pos.angleDeg ? "" : 'A: '+Math.round(start_pos.angleDeg)+'°' );
-                        textX.text('X: '+Math.round(position.x));
-                        textY.text('Y: '+Math.round(position.y));
                         textA.text(find_angle);
 
                         showCities();
@@ -440,6 +399,8 @@ Template.traveling.onRendered(function () {
                             start_pos = result;
                             position.x = result.x;
                             position.y = result.y;
+                            playerPosition = { x: result.x, y: result.y };
+                            playerPositionDep.changed();
                             insertHitCities();
                             player.setAttrs({ animation: 'walking', rotation: angleDeg-90 });
                             animStart = true;
@@ -577,10 +538,45 @@ Template.traveling.onRendered(function () {
                     movement();
                 };
 
-                loadScreen();
+                let imageObj = new Image(),
+                village;
+                imageObj.onload = function() {
+                    village = new Konva.Image({
+                        image: imageObj
+                    });
+                    city_group.add(village);
+
+                    const label = new Konva.Label({
+                        y: -30
+                    });
+                
+                    const tag = new Konva.Tag({
+                        fill: '#111',
+                        lineJoin: 'round',
+                        pointerDirection: 'down',
+                        pointerWidth: 5,
+                        pointerHeight: 5,
+                        cornerRadius: 5
+                    });
+                    label.add(tag);
+                
+                    const text = new Konva.Text({
+                        fontSize: 16,
+                        fill: 'white',
+                        padding: 5,
+                        align: 'center'
+                    });
+                    label.add(text);
+                        
+                    city_group.add(label);
+                    loadScreen();
+                };
+                imageObj.src = '/assets/village.png';
             } else if ( start_pos && !start_pos.angle && start_pos.x && gameStarted ) {
                 position.x = start_pos.x;
                 position.y = start_pos.y;
+                playerPosition = { x: start_pos.x, y: start_pos.y };
+                playerPositionDep.changed();
                 cities.setAttrs({ x: -start_pos.x+(window_size.width/2), y: -start_pos.y+(window_size.height/2) });
                 hitCities.remove({});
                 stopPlayer();
@@ -601,6 +597,7 @@ Template.traveling.onRendered(function () {
 
 Template.traveling.onRendered(function () {
     this.visitNext = new ReactiveVar( false );
+    this.playerPosition = new ReactiveVar( false );
     checkLoaded = function (t) {
         Meteor.setTimeout(function(){
             if ( loaded ) {
@@ -629,6 +626,20 @@ Template.traveling.onDestroyed(function () {
 });
 
 Template.traveling.events({
+    'click .toggle_manage'() {
+        if ( Router.current().route.path() != "/management" ) {
+            Router.go("/management");
+        } else {
+            Router.go("/");
+        };
+    },
+    'click .visiting'() {
+        if ( Router.current().route.path() != "/world" ) {
+            Router.go("/world");
+        } else {
+            Router.go("/");
+        };
+    },
     'click .visit_next'(e,t) {
         if (  t.visitNext.get() ) {
             t.visitNext.set(false);
@@ -645,22 +656,32 @@ Template.traveling.events({
 });
 
 Template.traveling.helpers({
+	coords() {
+        playerPositionDep.depend();
+        if ( playerPosition && playerPosition.x && playerPosition.y )
+        return "<div class='coords'>"+Math.round(playerPosition.x)+","+Math.round(playerPosition.y)+"</div>";
+    },
+	time() {
+		timeDep.depend();
+		if ( time )
+		return moment(time).format('h:mm:ssa');
+	},
     next(){
         const find_pos = Positions.findOne({ angle: { $exists: true } },{ fields: { angle: 1, city: 1 } });
         const check_circle = ( Template.instance().visitNext && Template.instance().visitNext.get() ? "lit" : "" );
         if ( find_pos && find_pos.angle && !find_pos.city )
-        return "<div class='button visit_next next round-sm "+check_circle+"'>Visit Next</div>";
+        return "<div class='button visit_next next "+check_circle+"'>Visit Next</div>";
     },
     visit(){
         let find_pos = Positions.findOne({},{ fields: { angle: 1, city: 1 } });
         if ( find_pos && find_pos.angle ) {
             const text = ( find_pos.city && find_pos.city.name ? "Visit "+find_pos.city.name : "Stop Here" );
             const stop = ( find_pos.city && find_pos.city.name ? "" : "stop" );
-            return "<div class='button visit_city round-sm "+stop+"'>"+text+"</div>";
+            return "<div class='button visit_city "+stop+"'>"+text+"</div>";
         } else if ( find_pos && find_pos.city && find_pos.city.name ) {
-            return "<div class='button visiting round-sm'>"+find_pos.city.name+"</div>";
+            return "<div class='button visiting'>"+find_pos.city.name+"</div>";
         } else if ( find_pos && !find_pos.angle ) {
-            return "<div class='button camping round-sm'>Camping</div>";
+            return "<div class='button camping'>Camping</div>";
         };
     },
     cities(){
@@ -690,7 +711,7 @@ Template.city.helpers({
     data(){
         let progress = Template.instance().cityInt.get();
         let format = moment((new Date()).getTime()+(progress*1000)).fromNow();
-        return "<span>Arriving at <span class='name'>"+this.name+"</span> "+format+"</span>"
+        return "<span>Arriving at</span><span class='name'>"+this.name+"</span><span>"+format+"</span>"
         // return "<span class='name'>"+this.name+"</span><span>"+format+"</span>"
         // return formatTimer(progress);
     }

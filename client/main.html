@@ -6,30 +6,32 @@
 
 <body>
   {{> sAlert}}
-  {{> traveling}}
+  {{#if showTravel}}
+    {{> traveling}}
+  {{/if}}
 </body>
 
 <template name='traveling'>
   <div class='traveling'>
-      <div class='box'>
-          <div class="visit">
-            {{{visit}}}{{{next}}}
-          </div>
-          <div class="cities">
-            {{#each cities}}{{> city}}{{/each}}
-          </div>
-          <div id="map">
-          </div>
+    <div class='box'>
+      <div id="top">
+        <div class="time">{{time}}</div><div class="data">{{{coords}}}<span class="mdi mdi-menu menu-button toggle_manage"></span></div>
       </div>
+      <div class="cities">
+        {{#each cities}}{{> city}}{{/each}}
+      </div>
+      <div class="visit">
+        {{{visit}}}{{{next}}}
+      </div>
+      <div id="map">
+      </div>
+    </div>
   </div>
 </template>
 
 <template name='menu'>
-  <div id="top">
-    <div class="time">{{time}}</div>
-    <div id="menu">
-      {{#each menu}}<div class="button menu{{class}}">{{text}}</div>{{/each}}
-    </div>
+  <div id="menu">
+    {{#each menu}}<div class="button menu{{class}}">{{text}}</div>{{/each}}
   </div>
 </template>
 
@@ -42,7 +44,7 @@
 </template>
   
 <template name='login'>
-  <div id='full' class='flex'>
+  <div id='overlay' class='flex'>
     <div id='login' class='box'>
       <div class='logo'></div>
       {{#if showReturning}}
@@ -61,8 +63,9 @@
 </template>
 
 <template name='gathering'>
-  <div id='full' class='gathering flex'>
-      <div class='box'>
+  <div id='overlay' class='gathering flex'>
+      <div class='box slim'>
+          <div class="background"></div>
           {{> menu}}
           <div class="headline">Skills</div>
           {{#each skills}}{{> skill}}{{/each}}
@@ -129,8 +132,9 @@
 </template>
 
 <template name='hiring'>
-  <div id='full' class='hiring flex'>
-      <div class='box'>
+  <div id='overlay' class='hiring flex'>
+      <div class='box slim'>
+          <div class="background"></div>
           {{> menu}}
           <div class="headline">Employees</div>
           {{#each employees}}{{> employee}}{{/each}}
@@ -144,17 +148,21 @@
 </template>
 
 <template name='production'>
-  <div id='full' class='production flex'>
-      <div class='box'>
+  <div id='overlay' class='production flex'>
+      <div class='box slim'>
+          <div class="background"></div>
           {{> menu}}
       </div>
   </div>
 </template>
 
-<template name='land'>
-  <div id='full' class='map flex'>
-      <div class='box'>
+<template name='world'>
+  <div id='overlay' class='map flex'>
+      <div class='box slim'>
+        <div class="background"></div>
+        {{#if showCity}}
           {{> menu}}
+        {{/if}}
       </div>
   </div>
 </template>
@@ -164,8 +172,8 @@
 </template>
 
 <template name='leaderboard'>
-    <div id='full' class='leaderboard flex'>
-        <div class='box'>
+    <div id='overlay' class='leaderboard flex'>
+        <div class='box slim'>
             {{> menu}}
             <div class="button half noselect prev">Prev</div><div class="button half noselect next">Next</div>
             {{#each leaders}}
