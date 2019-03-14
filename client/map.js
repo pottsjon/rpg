@@ -593,9 +593,6 @@ Template.traveling.onRendered(function () {
             try { Meteor.clearTimeout(nextTimeout) } catch(e) {};
         };
     });
-});
-
-Template.traveling.onRendered(function () {
     this.visitNext = new ReactiveVar( false );
     this.playerPosition = new ReactiveVar( false );
     checkLoaded = function (t) {
@@ -618,6 +615,17 @@ Template.traveling.onRendered(function () {
         }, 500);
     };
     checkLoaded(this);
+});
+
+Template.traveling.onCreated(function () {
+	Tracker.autorun(function() {
+		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { _id: 1 } });
+        if ( visiting ) {
+            Router.go("/world");
+        } else {
+            Router.go("/");
+        };
+    });
 });
 
 Template.traveling.onDestroyed(function () {

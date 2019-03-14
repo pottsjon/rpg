@@ -86,8 +86,7 @@ UI.body.helpers({
 
 Template.world.helpers({
 	showCity(){
-		let visiting = Positions.findOne({ 'city.visiting': true });
-		console.log(visiting);
+		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { _id: 1 } });
 		if ( visiting )
 		return true
 	}
