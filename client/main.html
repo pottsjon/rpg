@@ -87,9 +87,13 @@
 </template>
 
 <template name='skill'>
-  <div class="skill">
-    <span class="name">{{name}}</span><span class="amount">{{toNumbers amount}} ({{level}})</span>
-  </div>
+  {{#if showTitle}}
+    <div class="skill title">{{title}}</div>
+  {{else}}
+    <div class="skill">
+      <span class="name">{{name}}</span><span class="amount">{{toNumbers amount}} ({{level}})</span>
+    </div>
+  {{/if}}
 </template>
 
 <template name='item'>

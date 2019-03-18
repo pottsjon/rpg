@@ -10,7 +10,7 @@ Meteor.subscribe('tasks');
 Meteor.subscribe('items');
 Meteor.subscribe('workers');
 Meteor.subscribe('employees');
-Meteor.subscribe('skills', Meteor.userId());
+Meteor.subscribe('skills');
 Meteor.subscribe('inventory');
 Meteor.subscribe('queues');
 Meteor.subscribe('sysmsgs');

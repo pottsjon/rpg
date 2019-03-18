@@ -180,15 +180,51 @@ cityTimerStop = function (owner) {
     try { Meteor.clearTimeout(tradeTimers[owner]) } catch(e) { };
 };
 
-var queueSkill = [];
-var manageSkill = [];
 var queueInt = [];
 var queueTimeout = [];
 startQueue = function (queue) {
     try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
     queueInt[queue.owner+queue.worker] = Meteor.setInterval(function() {
+        queue = queueSkill(queue);
+        queue = queueRoll(queue);
         awardQueue(queue)
     }, 1000*queue.length);
+};
+
+queueSkill = function (queue) {
+    if ( !queue.skill ) {
+        const skill = Skills.findOne({ "$and": [
+            { owner: queue.worker },
+            { name: queue.task.skill }
+        ]},{ fields: { amount: 1, level: 1 } });
+        queue.skill = ( !skill ? { amount: 0, level: 1 } : skill );
+    };
+    if ( queue.worker != queue.owner && !queue.manager ) {
+        const manager_skill = Skills.findOne({ "$and": [
+            { owner: queue.owner },
+            { name: "Management" }
+        ]},{ fields: { amount: 1, level: 1 } });
+        queue.manager = ( !manager_skill ? { amount: 0, level: 1 } : manager_skill );
+    };
+    return queue;
+};
+
+queueRoll = function (queue) {
+    queue.roll = Math.floor(Math.random()*(1-(-queue.skill.level))-(-1));
+    const update_amount = queue.skill.amount-(-queue.roll*10);
+    queue.skill = {
+        amount: update_amount,
+        level: itemLevel(update_amount)
+    };
+    if ( queue.worker != queue.owner ) {
+        queue.skill.boss = queue.owner;
+        const manager_amount = queue.manager.amount-(-queue.roll);
+        queue.manager = {
+            amount: manager_amount,
+            level: itemLevel(manager_amount)
+        };
+    };
+    return queue;
 };
 
 initQueue = function (queue) {
@@ -202,25 +238,14 @@ initQueue = function (queue) {
         queue_awards.push(item_data);
     });
     queue.awards = queue_awards;
-    const skill = Skills.findOne({ "$and": [
-        { owner: queue.worker },
-        { name: task.skill }
-    ]},{ fields: { amount: 1, level: 1 } });
-    queue.skill = ( !skill ? { amount: 0, level: 1 } : skill );
-    queueSkill[queue.worker] = ( !skill ? 0 : skill.amount );
-    if ( queue.worker != queue.owner ) {
-        const manager_skill = Skills.findOne({ "$and": [
-            { owner: queue.owner },
-            { name: "Management" }
-        ]},{ fields: { amount: 1 } });
-        manageSkill[queue.owner] = ( !manager_skill ? 0 : manager_skill.amount );
-    };
+    queue = queueSkill(queue);
     const time_lapsed = (new Date()).getTime()-queue.started;
     const queue_length = queue.length*1000;
     const elapsed_count = Math.floor(time_lapsed/queue_length);
     if ( elapsed_count >= 1 ) {
         const timeout_length = queue_length-(time_lapsed-(queue_length*elapsed_count));
         queueTimeout[queue.owner+queue.worker] = Meteor.setTimeout(function() {
+            queue = queueRoll(queue);
             awardQueue(queue);
             initQueue(queue);
         }, timeout_length);
@@ -229,21 +254,21 @@ initQueue = function (queue) {
     };
 }
 
-invUpdate = function (owner,item,amount,updater,skill,queued) {
+invUpdate = function (queue,item,queued) {
     // queued updates are from new items you create
-    let inc_amount = { amount: amount };
+    let inc_amount = { amount: queue.roll };
     if ( queued ) {
         inc_amount["runs"] = 1;
-        inc_amount["total"] = amount;
+        inc_amount["total"] = queue.roll;
     };
     Inventory.update({ "$and": [
-        { owner: owner },
+        { owner: queue.owner },
         { item: item }
     ]},{
         $set: {
             updatedAt: (new Date()).getTime(),
-            updatedBy: updater,
-            updatedHow: skill
+            updatedBy: queue.worker,
+            updatedHow: queue.task.skill
         },
         $inc: inc_amount
     },{ upsert: true },
@@ -252,7 +277,6 @@ invUpdate = function (owner,item,amount,updater,skill,queued) {
 };
 
 awardQueue = function (queue) {
-    const roll_amount = Math.floor(Math.random()*(1-(-queue.skill.level))-(-1));
     if ( queue.task.items.length > 1 ) {
         let award_items = [];
         let item_roll = Math.floor(Math.random()*1000+1);
@@ -264,7 +288,7 @@ awardQueue = function (queue) {
             });
             if ( award_items.length >= 1 ) {                
                 const choose_item = Math.floor(Math.random()*(award_items.length));
-                invUpdate(queue.owner,award_items[choose_item],roll_amount,queue.worker,queue.task.skill,true);
+                invUpdate(queue,award_items[choose_item],true);
             } else {
                 let adjust_roll = ( roll-100 > 599 ) ? roll-100 : 0;
                 awardItems(adjust_roll);
@@ -272,30 +296,16 @@ awardQueue = function (queue) {
         };
         awardItems(item_roll);
     } else {
-        invUpdate(queue.owner,queue.task.items[0],roll_amount,queue.worker,queue.task.skill,true);
+        invUpdate(queue,queue.task.items[0],true);
     }
-    const update_amount = queueSkill[queue.worker]-(-roll_amount*10);
-    const update_level = itemLevel(update_amount);
-    queueSkill[queue.worker] = update_amount;
-    let skill_set = {
-        amount: update_amount,
-        level: update_level
-    };
     if ( queue.worker != queue.owner ) {
-        skill_set["boss"] = queue.owner;
-        const manager_amount = manageSkill[queue.owner]-(-roll_amount);
-        const manager_level  = itemLevel(manager_amount);
-        manageSkill[queue.owner] = manager_amount;
-        let manager_set = {
-            amount: manager_amount,
-            level: manager_level
-        };
         Skills.update({ "$and": [
             { owner: queue.owner },
             { name: "Management" },
             { type: "Life" }
         ]},{
-            $set: manager_set
+            $inc: { amount: queue.roll },
+            $set: { level: queue.manager.level }
         },{ upsert: true },
         function(err, count) {
         });
@@ -303,14 +313,12 @@ awardQueue = function (queue) {
     Skills.update({ "$and": [
         { owner: queue.worker },
         { name: queue.task.skill },
-        { type: "Resources" }
+        { type: "Resource" }
     ]},{
-        $set: skill_set
+        $set: queue.skill
     },{ upsert: true },
     function(err, count) {
     });
-    if ( queue.skill.level != update_level )
-    initQueue(queue);
 };
 
 awardQueues = function () {
@@ -354,8 +362,6 @@ clearQueues = function () {
         find_queues.forEach((queue) => {
             try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
             try { Meteor.clearTimeout(queueTimeout[queue.owner+queue.worker]) } catch (e) { };
-            try { delete queueSkill[queue.worker] } catch (e) { };
-            try { delete manageSkill[queue.owner] } catch (e) { };    
         });
 	});
 };

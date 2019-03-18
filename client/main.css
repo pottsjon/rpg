@@ -51,6 +51,7 @@ img { pointer-events: none; }
 .task:hover { background: #3ba54d; border-bottom: 1px solid #2a6f36; color: #caffd3; }
 .skill .amount, .item .amount, .leader .amount { float: right; }
 .task .amount { margin-left: 5px; font-size: 12px; font-weight: normal; }
+.skill.title { font-weight: bold; font-size: 12px; color: #0c5c71; background: #d8d8d8; }
 
 .logs { max-height: 300px; overflow-y: auto; }
 .logs .log { padding: 1px 2px; }

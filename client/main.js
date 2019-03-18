@@ -15,6 +15,7 @@ import '../imports/api/globals.js';
 import '../imports/api/methods.js';
 import './management/main.js';
 import './map.js';
+import { SlowBuffer } from 'buffer';
 
 UI.body.onRendered(function() {
 	Tracker.autorun(function() {
@@ -185,12 +186,29 @@ Template.queue.onDestroyed(function () {
     try { Meteor.clearTimeout(queueInts[this.data._id]) } catch (e) { };
 });
 
+Template.skill.helpers({
+	showTitle(){
+		if ( this.title )
+		return true;
+	}
+});
+
 Template.gathering.helpers({
 	logs(){
 		return sysMsgs.find({},{ sort: { updatedAt: -1 }, limit: 200 });
 	},
 	skills(){
-		return Skills.find({ owner: Meteor.userId() },{ sort: { amount: -1 } });
+		let skills = Skills.find({ owner: Meteor.userId() },{ sort: { type: 1, amount: -1 } }).fetch();
+		let skill_return = [];
+		let skill_types = [];
+		skills.forEach((skill) => {
+			if ( !skill_types[skill.type] ) {
+				skill_types[skill.type] = true;
+				skill_return.push({ title: skill.type+" Skills" });
+			};
+			skill_return.push(skill);
+		});
+		return skill_return;
 	},
 	inventory(){
 		return Inventory.find({},{ sort: { amount: -1 } });
