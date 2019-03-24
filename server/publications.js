@@ -18,36 +18,12 @@ Meteor.publish("tasks", function () {
 	return Tasks.find({});
 });
 
-skillsPub = [];
-Meteor.publish("skills", function () {
-	let pub = this;
-	let foundPub = Skills.find({ "$or": [{ owner: this.userId },{ boss: this.userId }] });
-	if ( this.userId ) {
-		skillsPub[this.userId] = foundPub.observeChanges({
-			added: function(oId, oFields) {
-				pub.added('skills', oId, oFields);
-			},
-			changed: function(oId, oFields) {
-				pub.changed('skills', oId, oFields);
-			},
-			removed: function(oId) {
-				pub.removed('skills', oId);
-			}
-		});
-		pub.ready();
-		pub.onStop(function () {
-			skillsPub[this.userId].stop();
-			try { delete skillsPub[this.userId] } catch(e) {};
-		});
-	};
-});
-
-queuesPub = [];
 Meteor.publish("queues", function () {
-	let pub = this;
-    let foundPub = Queues.find({ owner: this.userId });
+	let pub = this,
+	queuesPub = [],
+    foundPub = Queues.find({ owner: this.userId });
 	if ( this.userId ) {
-		queuesPub[this.userId] = foundPub.observeChanges({
+		queuesPub = foundPub.observeChanges({
 			added: function(oId, oFields) {
 				if ( oFields.worker != oFields.owner )
 				oFields["name"] = Workers.findOne({
@@ -67,18 +43,40 @@ Meteor.publish("queues", function () {
 		});
 		pub.ready();
 		pub.onStop(function () {
-			queuesPub[this.userId].stop();
-			try { delete queuesPub[this.userId] } catch(e) {};
+			queuesPub.stop();
 		});
 	};
 });
 
-workersPub = [];
-Meteor.publish("workers", function () {
-	let pub = this;
-    let foundPub = Workers.find({ owner: { $exists: false } });
+Meteor.publish("skills", function () {
+	let pub = this,
+	skillsPub = [],
+	foundPub = Skills.find({ "$or": [{ owner: this.userId },{ boss: this.userId }] });
 	if ( this.userId ) {
-		workersPub[this.userId] = foundPub.observeChanges({
+		skillsPub = foundPub.observeChanges({
+			added: function(oId, oFields) {
+				pub.added('skills', oId, oFields);
+			},
+			changed: function(oId, oFields) {
+				pub.changed('skills', oId, oFields);
+			},
+			removed: function(oId) {
+				pub.removed('skills', oId);
+			}
+		});
+		pub.ready();
+		pub.onStop(function () {
+			skillsPub.stop();
+		});
+	};
+});
+
+Meteor.publish("workers", function (city) {
+	if ( this.userId && city ) {
+		let pub = this,
+		workersPub = [],
+		foundPub = Workers.find({ "$and": [{ owner: { $exists: false } },{ city: city }] });
+		workersPub = foundPub.observeChanges({
 			added: function(oId, oFields) {
 				pub.added('workers', oId, oFields);
 			},
@@ -91,18 +89,17 @@ Meteor.publish("workers", function () {
 		});
 		pub.ready();
 		pub.onStop(function () {
-			workersPub[this.userId].stop();
-			try { delete workersPub[this.userId] } catch(e) {};
+			workersPub.stop();
 		});
 	};
 });
 
-employeesPub = [];
 Meteor.publish("employees", function () {
-	let pub = this;
-    let foundPub = Workers.find({ owner: this.userId });
+	let pub = this,
+	employeesPub = [],
+    foundPub = Workers.find({ owner: this.userId });
 	if ( this.userId ) {
-		employeesPub[this.userId] = foundPub.observeChanges({
+		employeesPub = foundPub.observeChanges({
 			added: function(oId, oFields) {
 				pub.added('employees', oId, oFields);
 			},
@@ -115,18 +112,20 @@ Meteor.publish("employees", function () {
 		});
 		pub.ready();
 		pub.onStop(function () {
-			employeesPub[this.userId].stop();
-			try { delete employeesPub[this.userId] } catch(e) {};
+			employeesPub.stop();
 		});
 	};
 });
 
-inventoryPub = [];
-Meteor.publish("inventory", function () {
-	let pub = this;
-    let foundPub = Inventory.find({ owner: this.userId });
+Meteor.publish("inventory", function (city) {
+	let pub = this,
+	inventoryPub = [];
+	let inv_lookup = [{ "$and": [{ city: { $exists:  false } },{ owner: this.userId }] }];
+	if ( city )
+	inv_lookup.push({ "$and": [{ city: city },{ owner: this.userId }] });
+    let foundPub = Inventory.find({ "$or": inv_lookup });
 	if ( this.userId ) {
-		inventoryPub[this.userId] = foundPub.observeChanges({
+		inventoryPub = foundPub.observeChanges({
 			added: function(oId, oFields) {
 				oFields.item = Items.findOne({ 'name.single': oFields.item });
 				pub.added('inventory', oId, oFields);
@@ -140,16 +139,15 @@ Meteor.publish("inventory", function () {
 		});
 		pub.ready();
 		pub.onStop(function () {
-			inventoryPub[this.userId].stop();
-			try { delete inventoryPub[this.userId] } catch(e) {};
+			inventoryPub.stop();
 		});
 	};
 });
 
-leadersPub = [];
 Meteor.publish("leaders", function (skip) {
-	let pub = this;
-	let foundPub = Inventory.find({
+	let pub = this,
+	leadersPub = [],
+	foundPub = Inventory.find({
 		total: { $gt: 0 }
 		},{
 		fields: {
@@ -166,7 +164,7 @@ Meteor.publish("leaders", function (skip) {
 		pollingThrottleMs: 60000
 	});	
 	if ( this.userId ) {
-		leadersPub[this.userId] = foundPub.observeChanges({
+		leadersPub = foundPub.observeChanges({
 			added: function(oId,oFields) {
 				oFields["name"] = Meteor.users.findOne({
 					_id: oFields.owner
@@ -182,8 +180,7 @@ Meteor.publish("leaders", function (skip) {
 		});
 		pub.ready();
 		pub.onStop(function () {
-			leadersPub[this.userId].stop();
-			try { delete leadersPub[this.userId] } catch(e) {};
+			leadersPub.stop();
 		});
 	};
 });

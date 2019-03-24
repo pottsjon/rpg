@@ -1,10 +1,13 @@
 workforceEvaluate = function () {
-    const workforceCount = Workers.find({ owner: { $exists: false } },{ limit: 20 }).count();
-    if ( workforceCount < 20 )
-    workforceAdd(20-workforceCount);
+	const city_list = Cities.find({ type: "City" },{ fields: { name: 1 } }).fetch();
+    city_list.forEach((city) => {
+        const workforceCount = Workers.find({ "$and": [{ city: city.name },{ owner: { $exists: false } }] },{ limit: 20 }).count();
+        if ( workforceCount < 20 )
+        workforceAdd(20-workforceCount, city.name);
+    });
 };
 
-workforceAdd = function (count) {
+workforceAdd = function (count, city) {
     let time_now = (new Date()).getTime();
     let names = [];
 	for ( let i = 1; count >= i; i++ ) {
@@ -13,6 +16,7 @@ workforceAdd = function (count) {
     names.forEach((name) => {
         Workers.insert({
             name: name,
+            city: city,
             created: time_now
         });
     });
@@ -256,15 +260,18 @@ initQueue = function (queue) {
 
 invUpdate = function (queue,item,queued) {
     // queued updates are from new items you create
-    let inc_amount = { amount: queue.roll };
+    let inc_amount = { amount: queue.roll },
+    inv_update = [
+        { owner: queue.owner },
+        { item: item }
+    ];
     if ( queued ) {
         inc_amount["runs"] = 1;
         inc_amount["total"] = queue.roll;
     };
-    Inventory.update({ "$and": [
-        { owner: queue.owner },
-        { item: item }
-    ]},{
+    if ( queue.city )
+    inv_update.push({ city: queue.city });
+    Inventory.update({ "$and": inv_update },{
         $set: {
             updatedAt: (new Date()).getTime(),
             updatedBy: queue.worker,
@@ -280,7 +287,8 @@ awardQueue = function (queue) {
     if ( queue.task.items.length > 1 ) {
         let award_items = [];
         let item_roll = Math.floor(Math.random()*1000+1);
-        item_roll = ( item_roll > 599 ? item_roll : 0 );
+        // optimization (based on lowest item roll need) *must change adjust_roll below
+        // item_roll = ( item_roll > 599 ? item_roll : 0 );
         awardItems = function (roll) {
             queue.awards.forEach((item) => {
                 if ( roll >= item.roll && roll-100 <= item.roll )
@@ -290,7 +298,8 @@ awardQueue = function (queue) {
                 const choose_item = Math.floor(Math.random()*(award_items.length));
                 invUpdate(queue,award_items[choose_item],true);
             } else {
-                let adjust_roll = ( roll-100 > 599 ) ? roll-100 : 0;
+                // let adjust_roll = ( roll-100 > 599 ) ? roll-100 : 0;
+                let adjust_roll = ( roll-100 > 99 ) ? roll-100 : 0;
                 awardItems(adjust_roll);
             };
         };
@@ -343,27 +352,34 @@ clearQueues = function () {
 		{ 'status.online': false }
     ]},{ fields: { _id: 1 } });
 	users_away.forEach((user) => {
-		const find_queues = Queues.find({ "$and": [
-            { owner: user._id },
-			{ completed: { $exists: false } }
-		]},{ fields: { owner: 1, worker: 1 } }).fetch();
-		Queues.update({ "$and": [
-            { owner: user._id },
-			{ completed: { $exists: false } }
-		]},{
-			$set: {
-				completed: time_now
-            }
-        },{
-            multi: true
-        },
-        function(err, count) {
-        });
-        find_queues.forEach((queue) => {
-            try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
-            try { Meteor.clearTimeout(queueTimeout[queue.owner+queue.worker]) } catch (e) { };
-        });
+        clearQueue(user._id);
 	});
+};
+
+clearQueue = function (userId,single) {
+    let lookup = [
+        { owner: userId },
+        { completed: { $exists: false } }
+    ];
+    if ( single )
+    lookup.push({ worker: userId });
+    
+    const find_queues = Queues.find(
+        { "$and": lookup },
+        { fields: { owner: 1, worker: 1 } }
+    ).fetch(),
+    time_now = (new Date()).getTime();
+
+    Queues.update({ "$and": lookup },{ $set: {
+        completed: time_now
+    } },{ multi: true },
+    function(err, count) {
+    });
+
+    find_queues.forEach((queue) => {
+        try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
+        try { Meteor.clearTimeout(queueTimeout[queue.owner+queue.worker]) } catch (e) { };
+    });
 };
 
 checkCities = function () {
@@ -469,58 +485,99 @@ checkTasks = function () {
 	if ( !Tasks.findOne({}) ) {
         const data = [
 			{
+                type: "Resource",
 				skill: "Farming",
                 task: "Farm Potato",
                 exp: 0,
                 items: ["Potato"]
 			},
 			{
+                type: "Resource",
 				skill: "Farming",
                 task: "Farm Apple",
                 exp: 100,
                 items: ["Apple"]
 			},
 			{
+                type: "Resource",
 				skill: "Farming",
                 task: "Farm Orange",
                 exp: 1000,
                 items: ["Orange"]
 			},
 			{
+                type: "Resource",
 				skill: "Mining",
                 task: "Mine Bronze",
                 exp: 0,
-                items: ["Bronze Ore", "Yellow Gem", "Green Gem", "Blue Gem", "Red Gem"]
+                items: ["Bronze Ore", "Copper Ore", "Silver Ore", "Gold Ore", "Titanium Ore", "Iron Ore"]
 			},
 			{
+                type: "Resource",
 				skill: "Mining",
 				task: "Mine Copper",
                 exp: 100,
                 items: ["Copper Ore", "Green Gem"]
 			},
 			{
+                type: "Resource",
 				skill: "Mining",
 				task: "Mine Silver",
                 exp: 1000,
                 items: ["Silver Ore", "Blue Gem"]
 			},
 			{
+                type: "Resource",
 				skill: "Logging",
-                task: "Chop Beech",
+                task: "Chop Maple",
                 exp: 0,
-                items: ["Beech Log"]
+                items: ["Maple Log", "Ash Log", "Elm Log", "Cedar Log", "Fir Log", "Pine Log"]
 			},
 			{
+                type: "Resource",
 				skill: "Logging",
 				task: "Chop Ash",
                 exp: 100,
                 items: ["Ash Log"]
 			},
 			{
+                type: "Resource",
 				skill: "Logging",
-				task: "Chop Oak",
+				task: "Chop Elm",
                 exp: 1000,
-                items: ["Oak Log"]
+                items: ["Elm Log"]
+			},
+			{
+                type: "Product",
+				skill: "Blacksmithing",
+				task: "Smelt Copper",
+                exp: 0,
+                items: ["Copper Bar"],
+                requires: ["Copper Ore"]
+			},
+			{
+                type: "Product",
+				skill: "Blacksmithing",
+				task: "Smelt Bronze",
+                exp: 100,
+                items: ["Bronze Bar"],
+                requires: ["Bronze Ore"]
+			},
+			{
+                type: "Product",
+				skill: "Woodworking",
+				task: "Process Maple",
+                exp: 0,
+                items: ["Maple Wood"],
+                requires: ["Maple Log"]
+			},
+			{
+                type: "Product",
+				skill: "Woodworking",
+				task: "Process Ash",
+                exp: 100,
+                items: ["Ash Wood"],
+                requires: ["Ash Log"]
 			}
 		];
         data.forEach((job) => {
@@ -558,7 +615,7 @@ checkItems = function () {
             },
             {
                 skill: "Mining",
-                type: "Metal",
+                type: "Ore",
                 rarity: 'Common',
                 name: { single: "Bronze Ore" , plural: "Bronze Ore" },
                 roll: 0,
@@ -566,19 +623,43 @@ checkItems = function () {
             },
             {
                 skill: "Mining",
-                type: "Metal",
+                type: "Ore",
                 rarity: 'Common',
                 name: { single: "Copper Ore" , plural: "Copper Ore" },
-                roll: 0,
+                roll: 200,
                 level: 2
             },
             {
                 skill: "Mining",
-                type: "Metal",
+                type: "Ore",
+                rarity: 'Common',
+                name: { single: "Iron Ore" , plural: "Iron Ore" },
+                roll: 360,
+                level: 3
+            },
+            {
+                skill: "Mining",
+                type: "Ore",
                 rarity: 'Common',
                 name: { single: "Silver Ore" , plural: "Silver Ore" },
-                roll: 0,
-                level: 3
+                roll: 520,
+                level: 4
+            },
+            {
+                skill: "Mining",
+                type: "Ore",
+                rarity: 'Common',
+                name: { single: "Gold Ore" , plural: "Gold Ore" },
+                roll: 680,
+                level: 5
+            },
+            {
+                skill: "Mining",
+                type: "Ore",
+                rarity: 'Common',
+                name: { single: "Titanium Ore" , plural: "Titanium Ore" },
+                roll: 840,
+                level: 6
             },
             {
                 skill: "Mining",
@@ -614,27 +695,83 @@ checkItems = function () {
             },
             {
                 skill: "Logging",
-                type: "Wood",
+                type: "Log",
                 rarity: 'Common',
-                name: { single: "Beech Log" , plural: "Beech Logs" },
+                name: { single: "Maple Log" , plural: "Maple Logs" },
                 roll: 0,
                 level: 1
             },
             {
                 skill: "Logging",
-                type: "Wood",
+                type: "Log",
                 rarity: 'Common',
                 name: { single: "Ash Log" , plural: "Ash Logs" },
-                roll: 0,
+                roll: 200,
                 level: 2
             },
             {
                 skill: "Logging",
+                type: "Log",
+                rarity: 'Common',
+                name: { single: "Elm Log" , plural: "Elm Logs" },
+                roll: 360,
+                level: 3
+            },
+            {
+                skill: "Logging",
+                type: "Log",
+                rarity: 'Common',
+                name: { single: "Cedar Log" , plural: "Cedar Logs" },
+                roll: 520,
+                level: 4
+            },
+            {
+                skill: "Logging",
+                type: "Log",
+                rarity: 'Common',
+                name: { single: "Fir Log" , plural: "Fir Logs" },
+                roll: 680,
+                level: 5
+            },
+            {
+                skill: "Logging",
+                type: "Log",
+                rarity: 'Common',
+                name: { single: "Pine Log" , plural: "Pine Logs" },
+                roll: 840,
+                level: 6
+            },
+            {
+                skill: "Blacksmithing",
+                type: "Metal",
+                rarity: 'Common',
+                name: { single: "Copper Bar" , plural: "Copper Bars" },
+                roll: 0,
+                level: 1
+            },
+            {
+                skill: "Blacksmithing",
+                type: "Metal",
+                rarity: 'Common',
+                name: { single: "Bronze Bar" , plural: "Bronze Bars" },
+                roll: 0,
+                level: 2
+            },
+            {
+                skill: "Woodworking",
                 type: "Wood",
                 rarity: 'Common',
-                name: { single: "Oak Log" , plural: "Oak Logs" },
+                name: { single: "Maple Wood" , plural: "Maple Wood" },
                 roll: 0,
-                level: 3
+                level: 1
+            },
+            {
+                skill: "Woodworking",
+                type: "Wood",
+                rarity: 'Common',
+                name: { single: "Ash Wood" , plural: "Ash Wood" },
+                roll: 0,
+                level: 2
             }
         ];
         data.forEach((item) => {

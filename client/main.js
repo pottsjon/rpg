@@ -27,6 +27,16 @@ UI.body.onRendered(function() {
 					timeDep.changed();
 				};
 			}, 333);
+			let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
+			if ( visiting && visiting.city.name ) {
+				try { workersSub.stop() } catch (e) {};
+				workersSub = Meteor.subscribe('workers', visiting.city.name);
+				try { invSub.stop() } catch (e) {};
+				invSub = Meteor.subscribe('inventory', visiting.city.name);
+			} else {
+				try { workersSub.stop() } catch (e) {};
+				try { invSub.stop() } catch (e) {};
+			};
 		} else {
 			try { sysMsgs.remove({}) } catch (e) {}
 		};
@@ -35,6 +45,7 @@ UI.body.onRendered(function() {
 			{
 				fields: {
 				'item.name': 1,
+				city: 1,
 				amount: 1,
 				updatedAt: 1,
 				updatedBy: 1,
@@ -78,18 +89,91 @@ Deps.autorun(function(c) {
 	} catch (e) {}
 });
 
-UI.body.helpers({
-	showTravel(){
-		if ( Meteor.user() )
-		return true
+Template.game.onCreated(function () {
+	this.invToggle = new ReactiveVar( true );
+});
+
+Template.game.events({
+	'click .toggle_inv'(e,t) {
+		const toggle = t.invToggle.get();
+		if ( toggle ) {
+			t.invToggle.set(false);
+		} else {
+			t.invToggle.set(true);
+		}
+	},
+	'click .inventory.tucked .box'(e,t) {
+		t.invToggle.set(false);
 	}
 });
 
-Template.world.helpers({
-	showCity(){
-		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { _id: 1 } });
-		if ( visiting )
+Template.game.helpers({
+	showInv(){
+		let toggle = Template.instance().invToggle.get();
+		if ( toggle )
+		return "tucked";
+	},
+	coords() {
+        playerPositionDep.depend();
+        if ( playerPosition && playerPosition.x && playerPosition.y )
+        return "<div class='coords'>"+Math.round(playerPosition.x)+","+Math.round(playerPosition.y)+"</div>";
+    },
+	time() {
+		timeDep.depend();
+		if ( time )
+		return moment(time).format('h:mm:ssa');
+	},
+	showGame(){
+		if ( Meteor.user() )
 		return true
+	},
+	inventory(){
+		return Inventory.find({ city: { $exists: false } },{ sort: { amount: -1 } });
+	}
+});
+
+Template.town.helpers({
+	skills(){
+		let skills = Skills.find({ owner: Meteor.userId() },{ sort: { type: 1, amount: -1 } }).fetch();
+		let skill_return = [];
+		let skill_types = [];
+		skills.forEach((skill) => {
+			if ( !skill_types[skill.type] ) {
+				skill_types[skill.type] = true;
+				skill_return.push({ title: skill.type+" Skills" });
+			};
+			skill_return.push(skill);
+		});
+		return skill_return;
+	},
+	queues(){
+		return Queues.find({ "$and": [
+			{ worker: Meteor.userId() },
+			{ completed: { $exists: false } }
+		] }).map(function(queue, index){
+			queue.award = sysMsgs.findOne({ updatedBy: queue.worker },{
+				sort: {
+					updatedAt: -1
+				},
+				fields: {
+					'item.name': 1,
+					amount: 1,
+					updatedAt: 1,
+					hide: 1
+				}
+			});
+			return queue;
+		});
+	},
+	logs(){
+		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
+		if ( visiting && visiting.city.name )
+		return sysMsgs.find({ city: visiting.city.name },{ sort: { updatedAt: -1 }, limit: 200 });
+	},
+	inventory(){
+		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
+		if ( visiting && visiting.city.name )
+		return Inventory.find({ city: visiting.city.name },{ sort: { amount: -1 } });
 	}
 });
 
@@ -193,47 +277,18 @@ Template.skill.helpers({
 	}
 });
 
-Template.gathering.helpers({
-	logs(){
-		return sysMsgs.find({},{ sort: { updatedAt: -1 }, limit: 200 });
-	},
-	skills(){
-		let skills = Skills.find({ owner: Meteor.userId() },{ sort: { type: 1, amount: -1 } }).fetch();
-		let skill_return = [];
-		let skill_types = [];
-		skills.forEach((skill) => {
-			if ( !skill_types[skill.type] ) {
-				skill_types[skill.type] = true;
-				skill_return.push({ title: skill.type+" Skills" });
-			};
-			skill_return.push(skill);
-		});
-		return skill_return;
-	},
-	inventory(){
-		return Inventory.find({},{ sort: { amount: -1 } });
-	},
-	queues(){
-		return Queues.find({ "$and": [
-			{ worker: Meteor.userId() },
-			{ completed: { $exists: false } }
-		] }).map(function(queue, index){
-			queue.award = sysMsgs.findOne({ updatedBy: queue.worker },{
-				sort: {
-					updatedAt: -1
-				},
-				fields: {
-					'item.name': 1,
-					amount: 1,
-					updatedAt: 1,
-					hide: 1
-				}
-			});
-			return queue;
-		});
-	},
-	tasks(){
-		return Tasks.find();
+Template.item.helpers({
+	img(){
+		let img = this.item.name.single.replace(/\s+/g, '-').toLowerCase();
+		return "<img class='round-sm' src='/assets/inv/"+img+".png'/>";
+	}
+});
+
+Template.task.helpers({
+	item(){
+		let img = this.items[0].replace(/\s+/g, '-').toLowerCase();
+		let task_img = this.skill.replace(/\s+/g, '-').toLowerCase();
+		return "<img class='image' src='/assets/inv/"+img+".png'/><img class='icon' src='/assets/icons/"+task_img+".png'/>";
 	}
 });
 
@@ -246,6 +301,21 @@ Template.gathering.events({
 	}
 });
 
+Template.gathering.helpers({
+	logs(){
+		return sysMsgs.find({},{ sort: { updatedAt: -1 }, limit: 200 });
+	},
+	tasks(){
+		return Tasks.find({ type: "Resource" });
+	}
+});
+
+Template.production.helpers({
+	tasks(){
+		return Tasks.find({ type: "Product" });
+	}
+});
+
 Template.hiring.onCreated(function () {
 	this.selectEmployee = new ReactiveVar( false );
 });
@@ -255,7 +325,9 @@ Template.hiring.helpers({
 		return sysMsgs.find({},{ sort: { updatedAt: -1 }, limit: 200 });
 	},
 	employees() {
-		return Employees.find({ owner: Meteor.userId() },{
+		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
+		if ( visiting && visiting.city.name )
+		return Employees.find({ "$and": [{ city: visiting.city.name },{ owner: Meteor.userId() }] },{
 			sort: {
 				working: -1,
 				started: -1
@@ -324,7 +396,7 @@ Template.menu.helpers({
 		const data = [
 			{
 				text: "Town",
-				route: '/world'
+				route: '/town'
 			},
 			{
 				text: "Gather",

@@ -2,13 +2,14 @@ html, body { background: #ccc; height: 100%; margin: 0; padding: 0; position: re
 input:focus, select:focus { outline:none; }
 img { pointer-events: none; }
 
+.slim { scrollbar-width: thin; scrollbar-color: #6fb5c5 #253e46; }
 .slim::-webkit-scrollbar { width: 10px; height: 10px; }
 .slim::-webkit-scrollbar-track { background-color: #253e46; -moz-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); box-shadow: inset 0 0 6px rgba(0,0,0,0.3); }
 .slim::-webkit-scrollbar-thumb { background-color: #6fb5c5; }
 
 .flex { display: -ms-flexbox; display: -webkit-flex; display: flex; -ms-flex-align: center; -webkit-align-items: center; -webkit-box-align: center; align-items: center; justify-content: center; }
 .noselect { -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; outline: none; -webkit-tap-highlight-color: rgba(255, 255, 255, 0); }
-.select { -webkit-touch-callout: initial; -webkit-user-select: initial; -khtml-user-select: initial; -moz-user-select: initial; -ms-user-select: initial; user-select: initial; }
+.select { -webkit-touch-callout: text; -webkit-user-select: text; -khtml-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text; }
 
 .button { cursor: pointer; background: #111; color: #fff; display: inline-block; padding: 5px 10px; }
 
@@ -20,17 +21,20 @@ img { pointer-events: none; }
 
 .half { width: 50%; display: inline-block; box-sizing: border-box; }
 
-.traveling { background: #ccc; position: fixed; top: 0; left: 0; width: 100%; height: 100%; text-align: center;  }
+.game { background: #ccc; position: fixed; top: 0; left: 0; width: 100%; height: 100%; text-align: center; }
+.gamebox { display: inline-block; background: #885530; width: 100%; max-width: 500px; height: 100%; position: relative; z-index: 110; }
+
+.traveling { background: #ccc; position: fixed; top: 0; left: 0; width: 100%; height: 100%; text-align: center; }
 .traveling .box { display: inline-block; background: #885530; width: 100%; max-width: 500px; height: 100%; position: relative; z-index: 110; }
-#overlay { height: 100%; padding: 30px 0 60px 0; box-sizing: border-box; }
-#overlay .box { width: 94%; max-width: 480px; max-height: 100%; overflow: auto; position: relative; background: #a7a7a7; z-index: 110; }
+#overlay { height: 100%; padding: 28px 0 48px 0; box-sizing: border-box; }
+#overlay .box { width: 100%; max-width: 500px; height: 100%; overflow: auto; position: relative; background: #a7a7a7; z-index: 110; text-align: left; }
 #overlay .background { width: 100%; height: 200px; background: #5db0d0 url(/assets/bg-village.png) no-repeat center center; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover; }
 
 #map { cursor: url('/assets/cursor-walk.png'), auto; background: #885530; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
 #map canvas:nth-child(2) { -moz-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); -webkit-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); }
 
 #menu { text-align: center; background: #111; }
-#top  { height: 28px; line-height: 28px; font-size: 12px; pointer-events: auto; z-index: 1000; position: absolute; top: 0; left: 0; width: 100%; padding: 0 0 0 10px; box-sizing: border-box; background: #462a0d; color: #ffffff; text-align: left; }
+#top  { height: 28px; line-height: 28px; font-size: 12px; pointer-events: auto; z-index: 1000; position: absolute; top: 0; left: 0; width: 100%; padding: 0 0 0 10px; box-sizing: border-box; background: #2577a9; color: #ffffff; text-align: left; }
 #top .time { display: inline-block; }
 #top .data { float: right; }
 #top .data .coords { display: inline-block; vertical-align: top; }
@@ -43,25 +47,47 @@ img { pointer-events: none; }
 #login .logo { width: 100%; text-align: center; margin-bottom: 10px; }
 #login .logo img { width: 100%; max-width: 400px; height: auto; }
 
-.skill, .item, .task { padding: 2px; }
+.skill { padding: 2px; }
 .headline { padding: 0px 2px; background: #195261; color: #52b9d2; font-size: 12px; letter-spacing: 0.3px; }
 /* blue colored .skill { background: #bee0f9; border-bottom: 1px solid #8bb1ce; color: #326a94; } */
-.skill, .item, .log, .worker { background: #efeded; border-bottom: 1px solid #9e9e9e; color: #585757; }
-.task { cursor: pointer; padding: 5px 2px; font-weight: bold; text-align: center; background: #7bde8c; border-bottom: 1px solid #55bb67; color: #2c843b; }
-.task:hover { background: #3ba54d; border-bottom: 1px solid #2a6f36; color: #caffd3; }
-.skill .amount, .item .amount, .leader .amount { float: right; }
-.task .amount { margin-left: 5px; font-size: 12px; font-weight: normal; }
+.skill, .log, .worker { background: #efeded; border-bottom: 1px solid #9e9e9e; color: #585757; }
+.skill .amount, .leader .amount { float: right; }
 .skill.title { font-weight: bold; font-size: 12px; color: #0c5c71; background: #d8d8d8; }
+
+.gathering { padding: 2px; }
+
+.task { cursor: pointer; padding: 2px; width: 16.66%; position: relative; display: inline-block; vertical-align: middle; box-sizing: border-box; }
+.task .rim { background: #6f6f6f; border: 2px solid #4c4c4c; overflow: hidden; position: relative; }
+.task .image { width: 80%; margin: 10%; }
+.task .icon { position: absolute; right: 0; bottom: 0; width: 30px; }
 
 .logs { max-height: 300px; overflow-y: auto; }
 .logs .log { padding: 1px 2px; }
 .logs .log .timestamp { margin-right: 2px; font-size: 11px; font-weight: bold; color: #484848; }
 
-.item .name { font-weight: bold; }
-.item.uncommon .name { color: #1db739; }
-.item.rare .name { color: #1764c7; }
-.item.epic .name { color: #5c2d8e; }
-.item.legendary .name { color: #d88300; }
+.inventory { z-index: 900; position: absolute; top: 28px; background: #4e3001; padding: 2px; text-align: left; width: 100%; box-sizing: border-box; }
+.inventory .toggle { background: #4e3001; position: absolute; bottom: -10px; left: 50%; width: 70px; height: 10px; margin-left: -35px; cursor: pointer; -moz-border-bottom-left-radius: 100%; -webkit-border-bottom-left-radius: 100%; border-bottom-left-radius: 100%; -moz-border-bottom-right-radius: 100%; -webkit-border-bottom-right-radius: 100%; border-bottom-right-radius: 100%; }
+.inventory .toggle .line { width: 60%; margin: 0 20%; height: 2px; background: #5f3a00; position: absolute; bottom: 6px; }
+.inventory.tucked { padding: 0; }
+.inventory.tucked .toggle { display: none; }
+.inventory.tucked .box { position: absolute; top: 5px; width: 100%; text-align: center; }
+.inventory.tucked .item { width: 40px; }
+.inventory.tucked .item .image { background: transparent; }
+.inventory.tucked .item .image .name { display: none; }
+.inventory.tucked .item .amount { font-size: 10px; text-shadow: -1px 1px 0 #000, 1px -1px 0 #000, 1px 1px 0 #000, -1px -1px 0 #000; background: transparent; position: absolute; top: 27px; padding: 0; width: 40px; text-align: center; }
+
+.storage .container { padding: 2px; background: #4e3001; }
+
+.item { cursor: pointer; padding: 2px; width: 14.28%; display: inline-block; vertical-align: middle; box-sizing: border-box; text-align: center; }
+.item .image { position: relative; background: rgba(255, 255, 255, 0.3); }
+.item .image img { max-width: 100%; vertical-align: middle; }
+.item .amount { text-align: right; padding: 1px 4px; background: #565656; color: #fff; }
+.item .name { display: none; position: absolute; bottom: 0; left: 0; width: 100%; text-transform: uppercase; font-weight: bold; font-size: 10px; letter-spacing: .4px; padding: 4px 5px; box-sizing: border-box; color: #e2e2e2; background: #3e3d3d; white-space: nowrap; overflow: hidden; text-align: center; }
+.item:hover .name { display: block; }
+.item.uncommon .amount { background: #1db739; }
+.item.rare .amount { background: #1764c7; }
+.item.epic .amount { background: #5c2d8e; }
+.item.legendary .amount { background: #d88300; }
 
 .leader { background: #b7b7b7; border-bottom: 1px solid #ababab; color: #4a4a4a; padding: 2px; }
 .leader .name { display: inline-block; }

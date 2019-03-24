@@ -20,7 +20,8 @@ Router.route('/', {
 		this.next();
 	},
 	action: function(){
-		this.render();
+		this.render('game');
+		this.render('', {to: 'visiting'});
 	}
 });
 
@@ -34,7 +35,8 @@ Router.route('/management', {
 		this.next();
 	},
 	action: function(){
-		this.render('management');
+		this.render('game');
+		// this.render('management');
 	}
 });
 
@@ -48,7 +50,9 @@ Router.route('/gathering', {
 		this.next();
 	},
 	action: function(){
-		this.render('gathering');
+		this.render('game');
+		this.render('gathering', {to: 'visiting'});
+		// this.render('gathering');
 	}
 });
 
@@ -62,7 +66,9 @@ Router.route('/production', {
 		this.next();
 	},
 	action: function(){
-		this.render('production');
+		this.render('game');
+		this.render('production', {to: 'visiting'});
+		// this.render('production');
 	}
 });
 
@@ -76,11 +82,13 @@ Router.route('/hiring', {
 		this.next();
 	},
 	action: function(){
-		this.render('hiring');
+		this.render('game');
+		this.render('hiring', {to: 'visiting'});
+		// this.render('hiring');
 	}
 });
 
-Router.route('/world', {
+Router.route('/town', {
 	waitOn: function() {
         return [];
 	},
@@ -90,7 +98,9 @@ Router.route('/world', {
 		this.next();
 	},
 	action: function(){
-		this.render('world');
+		this.render('game');
+		this.render('town', {to: 'visiting'});
+		// this.render('town');
 	}
 });
 
@@ -104,6 +114,7 @@ Router.route('/leaderboard', {
 		this.next();
 	},
 	action: function(){
-		this.render('leaderboard');
+		this.render('game');
+		// this.render('leaderboard');
 	}
 });

@@ -621,7 +621,7 @@ Template.traveling.onCreated(function () {
 	Tracker.autorun(function() {
 		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { _id: 1 } });
         if ( visiting ) {
-            Router.go("/world");
+            Router.go("/town");
         } else {
             Router.go("/");
         };
@@ -642,8 +642,8 @@ Template.traveling.events({
         };
     },
     'click .visiting'() {
-        if ( Router.current().route.path() != "/world" ) {
-            Router.go("/world");
+        if ( Router.current().route.path() != "/town" ) {
+            Router.go("/town");
         } else {
             Router.go("/");
         };
@@ -664,16 +664,6 @@ Template.traveling.events({
 });
 
 Template.traveling.helpers({
-	coords() {
-        playerPositionDep.depend();
-        if ( playerPosition && playerPosition.x && playerPosition.y )
-        return "<div class='coords'>"+Math.round(playerPosition.x)+","+Math.round(playerPosition.y)+"</div>";
-    },
-	time() {
-		timeDep.depend();
-		if ( time )
-		return moment(time).format('h:mm:ssa');
-	},
     next(){
         const find_pos = Positions.findOne({ angle: { $exists: true } },{ fields: { angle: 1, city: 1 } });
         const check_circle = ( Template.instance().visitNext && Template.instance().visitNext.get() ? "lit" : "" );

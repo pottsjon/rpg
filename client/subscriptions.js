@@ -8,7 +8,6 @@ hitCities = new Meteor.Collection(null);
 
 Meteor.subscribe('tasks');
 Meteor.subscribe('items');
-Meteor.subscribe('workers');
 Meteor.subscribe('employees');
 Meteor.subscribe('skills');
 Meteor.subscribe('inventory');

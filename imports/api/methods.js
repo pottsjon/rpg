@@ -23,8 +23,10 @@ Meteor.methods({
 			$set: set_position
 		});
 		set_position.owner = this.userId;
-		if ( Meteor.isServer )
-		cityTimerStart(set_position);
+		if ( Meteor.isServer ) {
+			cityTimerStart(set_position);
+			clearQueue(this.userId, true);
+		};
 		return set_position;
 	},
 	'stopMovement': function(owner, city) {
@@ -71,33 +73,36 @@ Meteor.methods({
 		})
 	},
 	'startTask': function(taskId,workerId) {
-		const worker_id = ( !workerId ? this.userId : workerId );
-		const time_now = (new Date()).getTime();
-		const queue = {
-			taskId: taskId,
-			owner: this.userId,
-			worker: worker_id,
-			created: time_now,
-			started: time_now,
-			length: 30
-		};
-		Queues.update({"$and": [
-			{ owner: this.userId },
-			{ worker: worker_id },
-			{ started: { $exists: true } },
-			{ completed: { $exists: false } }
-		]},{ $set: {
-			completed: time_now
-		} },
-		function(err, count) {
-			Queues.insert(queue);
-			if ( Meteor.isServer )
-			initQueue(queue);
-			Workers.update({ _id: worker_id },{
-				$set: {
-					working: time_now
-				}
+		if ( Meteor.isServer ) {
+			const location = ( workerId ? Workers.findOne({ _id: workerId },{ fields: { city: 1 } }) : Positions.findOne({ "$and": [{ 'city.visiting': true },{ owner: this.userId }]},{ fields: { 'city.name': 1 } }) );
+			const worker_id = ( workerId ? workerId : this.userId );
+			const time_now = (new Date()).getTime();
+			let queue = {
+				taskId: taskId,
+				owner: this.userId,
+				worker: worker_id,
+				created: time_now,
+				started: time_now,
+				length: 30
+			};
+			queue["city"] = ( workerId ? location.city : location.city.name );
+			Queues.update({"$and": [
+				{ owner: this.userId },
+				{ worker: worker_id },
+				{ started: { $exists: true } },
+				{ completed: { $exists: false } }
+			]},{ $set: {
+				completed: time_now
+			} },
+			function(err, count) {
+				Queues.insert(queue);
+				initQueue(queue);
+				Workers.update({ _id: worker_id },{
+					$set: {
+						working: time_now
+					}
+				});
 			});
-		});
+		};
 	}
 });

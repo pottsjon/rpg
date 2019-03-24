@@ -6,17 +6,31 @@
 
 <body>
   {{> sAlert}}
-  {{#if showTravel}}
-    {{> traveling}}
-  {{/if}}
 </body>
+
+<template name='game'>
+  <div class='game'>
+    <div class='gamebox'>
+      <div id="top">
+        <div class="time">{{time}}</div><div class="data">{{{coords}}}<span class="mdi mdi-menu menu-button toggle_manage"></span></div>
+      </div>
+      {{#if showGame}}
+        <div class="inventory {{showInv}}">
+          <div class="box">
+          {{#each inventory}}{{> item}}{{/each}}
+          </div>
+          <div class="toggle toggle_inv"><div class="line"></div></div>
+        </div>
+        {{> yield "visiting"}}
+        {{> traveling}}
+      {{/if}}
+    </div>
+  </div>
+</template>
 
 <template name='traveling'>
   <div class='traveling'>
     <div class='box'>
-      <div id="top">
-        <div class="time">{{time}}</div><div class="data">{{{coords}}}<span class="mdi mdi-menu menu-button toggle_manage"></span></div>
-      </div>
       <div class="cities">
         {{#each cities}}{{> city}}{{/each}}
       </div>
@@ -30,7 +44,7 @@
 </template>
 
 <template name='menu'>
-  <div id="menu">
+  <div id="menu" class="noselect">
     {{#each menu}}<div class="button menu{{class}}">{{text}}</div>{{/each}}
   </div>
 </template>
@@ -62,24 +76,6 @@
   </div>
 </template>
 
-<template name='gathering'>
-  <div id='overlay' class='gathering flex'>
-      <div class='box slim'>
-          <div class="background"></div>
-          {{> menu}}
-          <div class="headline">Skills</div>
-          {{#each skills}}{{> skill}}{{/each}}
-          <div class="headline">Inventory</div>
-          {{#each inventory}}{{> item}}{{/each}}
-          {{#each queues}}{{> queue}}{{/each}}
-          {{#each tasks}}{{> task}}{{/each}}
-          <div class="logs slim">
-          {{#each logs}}{{> log}}{{/each}}
-          </div>
-      </div>
-  </div>
-</template>
-
 <template name='log'>
   <div class="log">
       {{{message}}}
@@ -96,9 +92,15 @@
   {{/if}}
 </template>
 
-<template name='item'>
-  <div class="item {{toLowerCase item.rarity}}">
+<template name='item-backup'>
+  <div class="item {{toLowerCase item.rarity}}">  
       <span class="name">{{item.name.plural}}</span><span class="amount">{{toNumbers amount}}</span>
+  </div>
+</template>
+
+<template name='item'>
+  <div class="item noselect {{toLowerCase item.rarity}}">
+    <div class="image round-sm"><div class="name select">{{item.name.single}}</div>{{{img}}}<div class='amount select'>{{toNumbers amount}}</div></div>
   </div>
 </template>
 
@@ -112,10 +114,14 @@
   </div>
 </template>
 
-<template name='task'>
+<template name='task-backup'>
   <div class="task noselect">
     <span class="name">{{task}}</span><span class="amount">Exp Req: {{toNumbers exp}}</span>
   </div>
+</template>
+
+<template name='task'>
+  <div class="task noselect"><div class="rim round-sm">{{{item}}}</div></div>
 </template>
 
 <template name='worker'>
@@ -136,37 +142,44 @@
 </template>
 
 <template name='hiring'>
-  <div id='overlay' class='hiring flex'>
-      <div class='box slim'>
-          <div class="background"></div>
-          {{> menu}}
-          <div class="headline">Employees</div>
-          {{#each employees}}{{> employee}}{{/each}}
-          <div class="headline">Prospects</div>
-          {{#each prospects}}{{> worker}}{{/each}}
-          <div class="logs slim">
-          {{#each logs}}{{> log}}{{/each}}
-          </div>
-      </div>
+  <div class='hiring'>
+    <div class="headline">Employees</div>
+    {{#each employees}}{{> employee}}{{/each}}
+    <div class="headline">Prospects</div>
+    {{#each prospects}}{{> worker}}{{/each}}
   </div>
 </template>
 
 <template name='production'>
-  <div id='overlay' class='production flex'>
-      <div class='box slim'>
-          <div class="background"></div>
-          {{> menu}}
-      </div>
+  <div class='production'>
+    {{#each tasks}}{{> task}}{{/each}}
   </div>
 </template>
 
-<template name='world'>
+<template name='gathering'>
+  <div class='gathering'>
+    {{#each tasks}}{{> task}}{{/each}}
+  </div>
+</template>
+
+<template name='town'>
   <div id='overlay' class='map flex'>
       <div class='box slim'>
         <div class="background"></div>
-        {{#if showCity}}
-          {{> menu}}
-        {{/if}}
+        <div class="storage">
+          <div class="container">
+          {{#each inventory}}{{> item}}{{/each}}
+          </div>
+        </div>
+        <div class="headline">Skills</div>
+        {{#each skills}}{{> skill}}{{/each}}
+        {{#each queues}}{{> queue}}{{/each}}
+        {{> gathering}}
+        {{> production}}
+        {{> hiring}}
+        <div class="logs slim">
+        {{#each logs}}{{> log}}{{/each}}
+        </div>
       </div>
   </div>
 </template>
