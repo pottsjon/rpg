@@ -11,13 +11,15 @@ workforceAdd = function (count, city) {
     let time_now = (new Date()).getTime();
     let names = [];
 	for ( let i = 1; count >= i; i++ ) {
-        names.push(Fake.user().fullname);
+        names.push(Fake.user().name.charAt(0)+". "+Fake.user().surname);
     }
     names.forEach((name) => {
+        const choice = Math.floor(Math.random()*64)+1;
         Workers.insert({
             name: name,
             city: city,
-            created: time_now
+            created: time_now,
+            avatar: choice
         });
     });
 };
@@ -482,300 +484,319 @@ checkCities = function () {
 };
 
 checkTasks = function () {
-	if ( !Tasks.findOne({}) ) {
-        const data = [
-			{
-                type: "Resource",
-				skill: "Farming",
-                task: "Farm Potato",
-                exp: 0,
-                items: ["Potato"]
-			},
-			{
-                type: "Resource",
-				skill: "Farming",
-                task: "Farm Apple",
-                exp: 100,
-                items: ["Apple"]
-			},
-			{
-                type: "Resource",
-				skill: "Farming",
-                task: "Farm Orange",
-                exp: 1000,
-                items: ["Orange"]
-			},
-			{
-                type: "Resource",
-				skill: "Mining",
-                task: "Mine Bronze",
-                exp: 0,
-                items: ["Bronze Ore", "Copper Ore", "Silver Ore", "Gold Ore", "Titanium Ore", "Iron Ore"]
-			},
-			{
-                type: "Resource",
-				skill: "Mining",
-				task: "Mine Copper",
-                exp: 100,
-                items: ["Copper Ore", "Green Gem"]
-			},
-			{
-                type: "Resource",
-				skill: "Mining",
-				task: "Mine Silver",
-                exp: 1000,
-                items: ["Silver Ore", "Blue Gem"]
-			},
-			{
-                type: "Resource",
-				skill: "Logging",
-                task: "Chop Maple",
-                exp: 0,
-                items: ["Maple Log", "Ash Log", "Elm Log", "Cedar Log", "Fir Log", "Pine Log"]
-			},
-			{
-                type: "Resource",
-				skill: "Logging",
-				task: "Chop Ash",
-                exp: 100,
-                items: ["Ash Log"]
-			},
-			{
-                type: "Resource",
-				skill: "Logging",
-				task: "Chop Elm",
-                exp: 1000,
-                items: ["Elm Log"]
-			},
-			{
-                type: "Product",
-				skill: "Blacksmithing",
-				task: "Smelt Copper",
-                exp: 0,
-                items: ["Copper Bar"],
-                requires: ["Copper Ore"]
-			},
-			{
-                type: "Product",
-				skill: "Blacksmithing",
-				task: "Smelt Bronze",
-                exp: 100,
-                items: ["Bronze Bar"],
-                requires: ["Bronze Ore"]
-			},
-			{
-                type: "Product",
-				skill: "Woodworking",
-				task: "Process Maple",
-                exp: 0,
-                items: ["Maple Wood"],
-                requires: ["Maple Log"]
-			},
-			{
-                type: "Product",
-				skill: "Woodworking",
-				task: "Process Ash",
-                exp: 100,
-                items: ["Ash Wood"],
-                requires: ["Ash Log"]
-			}
-		];
-        data.forEach((job) => {
-			Tasks.insert(job);
-		});
-	};
+    const data = [
+        {
+            type: "Resource",
+            skill: "Farming",
+            task: "Farm Potato",
+            exp: 0,
+            items: ["Potato"]
+        },
+        {
+            type: "Resource",
+            skill: "Farming",
+            task: "Farm Apple",
+            exp: 2000,
+            items: ["Apple"]
+        },
+        {
+            type: "Resource",
+            skill: "Farming",
+            task: "Farm Orange",
+            exp: 4000,
+            items: ["Orange"]
+        },
+        {
+            type: "Resource",
+            skill: "Mining",
+            task: "Mine Bronze",
+            exp: 0,
+            degrade: 2000,
+            limit: 5000,
+            items: ["Bronze Ore", "Yellow Gem"]
+        },
+        {
+            type: "Resource",
+            skill: "Mining",
+            task: "Mine Copper",
+            exp: 2000,
+            items: ["Copper Ore", "Yellow Gem", "Green Gem"]
+        },
+        {
+            type: "Resource",
+            skill: "Mining",
+            task: "Mine Silver",
+            exp: 5000,
+            items: ["Silver Ore", "Yellow Gem", "Green Gem"]
+        },
+        {
+            type: "Resource",
+            skill: "Mining",
+            task: "Mine Gold",
+            exp: 10000,
+            items: ["Gold Ore", "Yellow Gem", "Green Gem", "Blue Gem"]
+        },
+        {
+            type: "Resource",
+            skill: "Mining",
+            task: "Mine Iron",
+            exp: 20000,
+            items: ["Iron Ore", "Yellow Gem", "Green Gem", "Blue Gem"]
+        },
+        {
+            type: "Resource",
+            skill: "Mining",
+            task: "Mine Titanium",
+            exp: 40000,
+            items: ["Titanium Ore", "Yellow Gem", "Green Gem", "Blue Gem", "Red Gem"]
+        },
+        {
+            type: "Resource",
+            skill: "Logging",
+            task: "Chop Maple",
+            exp: 0,
+            items: ["Maple Log"]
+        },
+        {
+            type: "Resource",
+            skill: "Logging",
+            task: "Chop Ash",
+            exp: 100,
+            items: ["Ash Log"]
+        },
+        {
+            type: "Resource",
+            skill: "Logging",
+            task: "Chop Elm",
+            exp: 1000,
+            items: ["Elm Log"]
+        },
+        {
+            type: "Product",
+            skill: "Blacksmithing",
+            task: "Smelt Copper",
+            exp: 0,
+            items: ["Copper Bar"],
+            requires: ["Copper Ore"]
+        },
+        {
+            type: "Product",
+            skill: "Blacksmithing",
+            task: "Smelt Bronze",
+            exp: 100,
+            items: ["Bronze Bar"],
+            requires: ["Bronze Ore"]
+        },
+        {
+            type: "Product",
+            skill: "Woodworking",
+            task: "Process Maple",
+            exp: 0,
+            items: ["Maple Wood"],
+            requires: ["Maple Log"]
+        },
+        {
+            type: "Product",
+            skill: "Woodworking",
+            task: "Process Ash",
+            exp: 100,
+            items: ["Ash Wood"],
+            requires: ["Ash Log"]
+        }
+    ];
+    data.forEach((job) => {
+        Tasks.update({ task: job.task },job,{ upsert: true });
+    });
 };
 
 checkItems = function () {
-	if ( !Items.findOne({}) ) {
-        const data = [
-            {
-                skill: "Farming",
-                type: "Food",
-                rarity: 'Common',
-                name: { single: "Potato" , plural: "Potatoes" },
-                roll: 0,
-                level: 1
-            },
-            {
-                skill: "Farming",
-                type: "Food",
-                rarity: 'Common',
-                name: { single: "Apple" , plural: "Apples" },
-                roll: 0,
-                level: 2
-            },
-            {
-                skill: "Farming",
-                type: "Food",
-                rarity: 'Common',
-                name: { single: "Orange" , plural: "Oranges" },
-                roll: 0,
-                level: 3
-            },
-            {
-                skill: "Mining",
-                type: "Ore",
-                rarity: 'Common',
-                name: { single: "Bronze Ore" , plural: "Bronze Ore" },
-                roll: 0,
-                level: 1
-            },
-            {
-                skill: "Mining",
-                type: "Ore",
-                rarity: 'Common',
-                name: { single: "Copper Ore" , plural: "Copper Ore" },
-                roll: 200,
-                level: 2
-            },
-            {
-                skill: "Mining",
-                type: "Ore",
-                rarity: 'Common',
-                name: { single: "Iron Ore" , plural: "Iron Ore" },
-                roll: 360,
-                level: 3
-            },
-            {
-                skill: "Mining",
-                type: "Ore",
-                rarity: 'Common',
-                name: { single: "Silver Ore" , plural: "Silver Ore" },
-                roll: 520,
-                level: 4
-            },
-            {
-                skill: "Mining",
-                type: "Ore",
-                rarity: 'Common',
-                name: { single: "Gold Ore" , plural: "Gold Ore" },
-                roll: 680,
-                level: 5
-            },
-            {
-                skill: "Mining",
-                type: "Ore",
-                rarity: 'Common',
-                name: { single: "Titanium Ore" , plural: "Titanium Ore" },
-                roll: 840,
-                level: 6
-            },
-            {
-                skill: "Mining",
-                type: "Material",
-                rarity: 'Uncommon',
-                name: { single: "Yellow Gem" , plural: "Yellow Gems" },
-                roll: 650,
-                level: 1
-            },
-            {
-                skill: "Mining",
-                type: "Material",
-                rarity: 'Rare',
-                name: { single: "Green Gem" , plural: "Green Gems" },
-                roll: 750,
-                level: 2
-            },
-            {
-                skill: "Mining",
-                type: "Material",
-                rarity: 'Epic',
-                name: { single: "Blue Gem" , plural: "Blue Gems" },
-                roll: 850,
-                level: 3
-            },
-            {
-                skill: "Mining",
-                type: "Material",
-                rarity: 'Legendary',
-                name: { single: "Red Gem" , plural: "Red Gems" },
-                roll: 950,
-                level: 3
-            },
-            {
-                skill: "Logging",
-                type: "Log",
-                rarity: 'Common',
-                name: { single: "Maple Log" , plural: "Maple Logs" },
-                roll: 0,
-                level: 1
-            },
-            {
-                skill: "Logging",
-                type: "Log",
-                rarity: 'Common',
-                name: { single: "Ash Log" , plural: "Ash Logs" },
-                roll: 200,
-                level: 2
-            },
-            {
-                skill: "Logging",
-                type: "Log",
-                rarity: 'Common',
-                name: { single: "Elm Log" , plural: "Elm Logs" },
-                roll: 360,
-                level: 3
-            },
-            {
-                skill: "Logging",
-                type: "Log",
-                rarity: 'Common',
-                name: { single: "Cedar Log" , plural: "Cedar Logs" },
-                roll: 520,
-                level: 4
-            },
-            {
-                skill: "Logging",
-                type: "Log",
-                rarity: 'Common',
-                name: { single: "Fir Log" , plural: "Fir Logs" },
-                roll: 680,
-                level: 5
-            },
-            {
-                skill: "Logging",
-                type: "Log",
-                rarity: 'Common',
-                name: { single: "Pine Log" , plural: "Pine Logs" },
-                roll: 840,
-                level: 6
-            },
-            {
-                skill: "Blacksmithing",
-                type: "Metal",
-                rarity: 'Common',
-                name: { single: "Copper Bar" , plural: "Copper Bars" },
-                roll: 0,
-                level: 1
-            },
-            {
-                skill: "Blacksmithing",
-                type: "Metal",
-                rarity: 'Common',
-                name: { single: "Bronze Bar" , plural: "Bronze Bars" },
-                roll: 0,
-                level: 2
-            },
-            {
-                skill: "Woodworking",
-                type: "Wood",
-                rarity: 'Common',
-                name: { single: "Maple Wood" , plural: "Maple Wood" },
-                roll: 0,
-                level: 1
-            },
-            {
-                skill: "Woodworking",
-                type: "Wood",
-                rarity: 'Common',
-                name: { single: "Ash Wood" , plural: "Ash Wood" },
-                roll: 0,
-                level: 2
-            }
-        ];
-        data.forEach((item) => {
-            Items.insert(item);
-        });
-    };
+    const data = [
+        {
+            skill: "Farming",
+            type: "Food",
+            rarity: 'Common',
+            name: { single: "Potato" , plural: "Potatoes" },
+            roll: 0,
+            level: 1
+        },
+        {
+            skill: "Farming",
+            type: "Food",
+            rarity: 'Common',
+            name: { single: "Apple" , plural: "Apples" },
+            roll: 0,
+            level: 2
+        },
+        {
+            skill: "Farming",
+            type: "Food",
+            rarity: 'Common',
+            name: { single: "Orange" , plural: "Oranges" },
+            roll: 0,
+            level: 3
+        },
+        {
+            skill: "Mining",
+            type: "Ore",
+            rarity: 'Common',
+            name: { single: "Bronze Ore" , plural: "Bronze Ore" },
+            roll: 0,
+            level: 1
+        },
+        {
+            skill: "Mining",
+            type: "Ore",
+            rarity: 'Common',
+            name: { single: "Copper Ore" , plural: "Copper Ore" },
+            roll: 0,
+            level: 2
+        },
+        {
+            skill: "Mining",
+            type: "Ore",
+            rarity: 'Common',
+            name: { single: "Silver Ore" , plural: "Silver Ore" },
+            roll: 0,
+            level: 4
+        },
+        {
+            skill: "Mining",
+            type: "Ore",
+            rarity: 'Common',
+            name: { single: "Gold Ore" , plural: "Gold Ore" },
+            roll: 0,
+            level: 5
+        },
+        {
+            skill: "Mining",
+            type: "Ore",
+            rarity: 'Common',
+            name: { single: "Iron Ore" , plural: "Iron Ore" },
+            roll: 0,
+            level: 3
+        },
+        {
+            skill: "Mining",
+            type: "Ore",
+            rarity: 'Common',
+            name: { single: "Titanium Ore" , plural: "Titanium Ore" },
+            roll: 0,
+            level: 6
+        },
+        {
+            skill: "Mining",
+            type: "Material",
+            rarity: 'Uncommon',
+            name: { single: "Yellow Gem" , plural: "Yellow Gems" },
+            roll: 650,
+            level: 1
+        },
+        {
+            skill: "Mining",
+            type: "Material",
+            rarity: 'Rare',
+            name: { single: "Green Gem" , plural: "Green Gems" },
+            roll: 750,
+            level: 2
+        },
+        {
+            skill: "Mining",
+            type: "Material",
+            rarity: 'Epic',
+            name: { single: "Blue Gem" , plural: "Blue Gems" },
+            roll: 850,
+            level: 3
+        },
+        {
+            skill: "Mining",
+            type: "Material",
+            rarity: 'Legendary',
+            name: { single: "Red Gem" , plural: "Red Gems" },
+            roll: 950,
+            level: 3
+        },
+        {
+            skill: "Logging",
+            type: "Log",
+            rarity: 'Common',
+            name: { single: "Maple Log" , plural: "Maple Logs" },
+            roll: 0,
+            level: 1
+        },
+        {
+            skill: "Logging",
+            type: "Log",
+            rarity: 'Common',
+            name: { single: "Ash Log" , plural: "Ash Logs" },
+            roll: 0,
+            level: 2
+        },
+        {
+            skill: "Logging",
+            type: "Log",
+            rarity: 'Common',
+            name: { single: "Elm Log" , plural: "Elm Logs" },
+            roll: 0,
+            level: 3
+        },
+        {
+            skill: "Logging",
+            type: "Log",
+            rarity: 'Common',
+            name: { single: "Cedar Log" , plural: "Cedar Logs" },
+            roll: 0,
+            level: 4
+        },
+        {
+            skill: "Logging",
+            type: "Log",
+            rarity: 'Common',
+            name: { single: "Fir Log" , plural: "Fir Logs" },
+            roll: 0,
+            level: 5
+        },
+        {
+            skill: "Logging",
+            type: "Log",
+            rarity: 'Common',
+            name: { single: "Pine Log" , plural: "Pine Logs" },
+            roll: 0,
+            level: 6
+        },
+        {
+            skill: "Blacksmithing",
+            type: "Metal",
+            rarity: 'Common',
+            name: { single: "Copper Bar" , plural: "Copper Bars" },
+            roll: 0,
+            level: 1
+        },
+        {
+            skill: "Blacksmithing",
+            type: "Metal",
+            rarity: 'Common',
+            name: { single: "Bronze Bar" , plural: "Bronze Bars" },
+            roll: 0,
+            level: 2
+        },
+        {
+            skill: "Woodworking",
+            type: "Wood",
+            rarity: 'Common',
+            name: { single: "Maple Wood" , plural: "Maple Wood" },
+            roll: 0,
+            level: 1
+        },
+        {
+            skill: "Woodworking",
+            type: "Wood",
+            rarity: 'Common',
+            name: { single: "Ash Wood" , plural: "Ash Wood" },
+            roll: 0,
+            level: 2
+        }
+    ];
+    data.forEach((item) => {
+        Items.update({ 'name.single': item.name.single },item,{ upsert: true });
+    });
 };

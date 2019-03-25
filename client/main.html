@@ -100,7 +100,7 @@
 
 <template name='item'>
   <div class="item noselect {{toLowerCase item.rarity}}">
-    <div class="image round-sm"><div class="name select">{{item.name.single}}</div>{{{img}}}<div class='amount select'>{{toNumbers amount}}</div></div>
+    <div class="image"><div class="name select"><div class="inside flex">{{item.name.single}}</div></div>{{{img}}}<div class='amount select'>{{toNumbers amount}}</div></div>
   </div>
 </template>
 
@@ -126,13 +126,23 @@
 
 <template name='worker'>
   <div class="worker">
-    <span class="name">{{name}}</span>
+    <div class="inside round-sm">
+      {{{avatar}}}
+      <div class="data">
+        <div class="name">{{name}}</div>
+      </div>
+    </div>
   </div>
 </template>
 
 <template name='employee'>
   <div class="worker employee">
-    <span class="name">{{name}}</span>
+      <div class="inside round-sm">
+      {{{avatar}}}
+      <div class="data">
+        <div class="name">{{name}}</div>
+      </div>
+    </div>
   </div>
   {{#each skills}}{{> skill}}{{/each}}
   {{#each queues}}{{> queue}}{{/each}}
@@ -144,21 +154,31 @@
 <template name='hiring'>
   <div class='hiring'>
     <div class="headline">Employees</div>
-    {{#each employees}}{{> employee}}{{/each}}
+    <div class="employees">
+      {{#each employees}}{{> employee}}{{/each}}
+    </div>
     <div class="headline">Prospects</div>
-    {{#each prospects}}{{> worker}}{{/each}}
+    <div class="prospects">
+      {{#each prospects}}{{> worker}}{{/each}}
+    </div>
   </div>
 </template>
 
 <template name='production'>
-  <div class='production'>
-    {{#each tasks}}{{> task}}{{/each}}
-  </div>
+  {{#each stalls}}{{> stall}}{{/each}}
+  {{#each tasks}}{{> task}}{{/each}}
 </template>
 
 <template name='gathering'>
-  <div class='gathering'>
-    {{#each tasks}}{{> task}}{{/each}}
+  {{#each stalls}}{{> stall}}{{/each}}
+  {{#each tasks}}{{> task}}{{/each}}
+</template>
+
+<template name='stall'>
+  <div class="stall">
+    <div class="job">
+      {{{task}}}
+    </div>
   </div>
 </template>
 
@@ -174,8 +194,9 @@
         <div class="headline">Skills</div>
         {{#each skills}}{{> skill}}{{/each}}
         {{#each queues}}{{> queue}}{{/each}}
-        {{> gathering}}
-        {{> production}}
+        <div class="tasks">
+          <div class="half gathering">{{> gathering}}</div><div class="half production">{{> production}}</div>
+        </div>
         {{> hiring}}
         <div class="logs slim">
         {{#each logs}}{{> log}}{{/each}}

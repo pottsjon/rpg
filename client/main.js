@@ -302,11 +302,22 @@ Template.gathering.events({
 });
 
 Template.gathering.helpers({
+	stalls(){
+
+	},
 	logs(){
 		return sysMsgs.find({},{ sort: { updatedAt: -1 }, limit: 200 });
 	},
 	tasks(){
-		return Tasks.find({ type: "Resource" });
+		let available_tasks = [], skills = {}, tasks = Tasks.find({ type: "Resource" }).fetch();
+		skills["Farming"] = Skills.findOne({ "$and": [{ name: "Farming" },{ owner: Meteor.userId() }] },{ fields: { amount: 1 } });
+		skills["Mining"] = Skills.findOne({ "$and": [{ name: "Mining" },{ owner: Meteor.userId() }] },{ fields: { amount: 1 } });
+		skills["Logging"] = Skills.findOne({ "$and": [{ name: "Logging" },{ owner: Meteor.userId() }] },{ fields: { amount: 1 } });
+		tasks.forEach((task) => {
+			if ( task.exp == 0 || ( skills[task.skill] && skills[task.skill].amount && skills[task.skill].amount >= task.exp ) )
+			available_tasks.push(task);
+		});
+		return available_tasks;
 	}
 });
 
@@ -385,9 +396,21 @@ Template.employee.events({
 	}
 });
 
+Template.employee.helpers({
+	avatar() {
+		return "<img class='avatar' src='/assets/workers/person-"+this.avatar+".png'/>"
+	}
+});
+
 Template.worker.events({
 	'click .worker'() {
 		Meteor.call('hireWorker',this._id);
+	}
+});
+
+Template.worker.helpers({
+	avatar() {
+		return "<img class='avatar' src='/assets/workers/person-"+this.avatar+".png'/>"
 	}
 });
 

@@ -50,15 +50,17 @@ img { pointer-events: none; }
 .skill { padding: 2px; }
 .headline { padding: 0px 2px; background: #195261; color: #52b9d2; font-size: 12px; letter-spacing: 0.3px; }
 /* blue colored .skill { background: #bee0f9; border-bottom: 1px solid #8bb1ce; color: #326a94; } */
-.skill, .log, .worker { background: #efeded; border-bottom: 1px solid #9e9e9e; color: #585757; }
+.skill, .log { background: #efeded; border-bottom: 1px solid #9e9e9e; color: #585757; }
 .skill .amount, .leader .amount { float: right; }
 .skill.title { font-weight: bold; font-size: 12px; color: #0c5c71; background: #d8d8d8; }
 
-.gathering { padding: 2px; }
+.tasks { background: #4c8ba2; }
+.gathering, .production { vertical-align: top; }
+.gathering { padding: 2px; background: #1d789a; }
 
-.task { cursor: pointer; padding: 2px; width: 16.66%; position: relative; display: inline-block; vertical-align: middle; box-sizing: border-box; }
-.task .rim { background: #6f6f6f; border: 2px solid #4c4c4c; overflow: hidden; position: relative; }
-.task .image { width: 80%; margin: 10%; }
+.task { cursor: pointer; padding: 2px; width: 25%; position: relative; display: inline-block; vertical-align: middle; box-sizing: border-box; }
+.task .rim { background: rgba(0, 0, 0, 0.2); overflow: hidden; position: relative; }
+.task .image { width: 100%; }
 .task .icon { position: absolute; right: 0; bottom: 0; width: 30px; }
 
 .logs { max-height: 300px; overflow-y: auto; }
@@ -79,10 +81,11 @@ img { pointer-events: none; }
 .storage .container { padding: 2px; background: #4e3001; }
 
 .item { cursor: pointer; padding: 2px; width: 14.28%; display: inline-block; vertical-align: middle; box-sizing: border-box; text-align: center; }
-.item .image { position: relative; background: rgba(255, 255, 255, 0.3); }
+.item .image { overflow: hidden; position: relative; background: rgba(255, 255, 255, 0.3); }
 .item .image img { max-width: 100%; vertical-align: middle; }
-.item .amount { text-align: right; padding: 1px 4px; background: #565656; color: #fff; }
-.item .name { display: none; position: absolute; bottom: 0; left: 0; width: 100%; text-transform: uppercase; font-weight: bold; font-size: 10px; letter-spacing: .4px; padding: 4px 5px; box-sizing: border-box; color: #e2e2e2; background: #3e3d3d; white-space: nowrap; overflow: hidden; text-align: center; }
+.item .amount { text-align: right; padding: 1px 4px; background: #969696; color: #fff; }
+.item .name { display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; text-transform: uppercase; font-weight: bold; font-size: 10px; letter-spacing: .4px; padding: 4px 5px; box-sizing: border-box; color: #e2e2e2; background: rgba(0, 0, 0, 0.5); overflow: hidden; text-align: center; }
+.item .name .inside { height: 100%; }
 .item:hover .name { display: block; }
 .item.uncommon .amount { background: #1db739; }
 .item.rare .amount { background: #1764c7; }
@@ -99,8 +102,15 @@ img { pointer-events: none; }
 .queue .award { visibility: visible; animation-name: rising; animation-timing-function: linear; transform-origin: center bottom; animation-duration: 1s; animation-fill-mode: both; position: absolute; z-index: 100; top: 0; width: 100%; text-align: center; }
 @keyframes rising {0% {top:0px;} 50% {opacity: 1;} 100% {top:-50px; opacity: 0;}}
 
-.worker { cursor: pointer; padding: 1px 2px; }
-.worker.employee { padding: 2px; background: #c2dbe8; }
+.prospects, .employees { padding: 3px; background: #4ca28e; }
+.employees { background: #5f949c; }
+
+.worker { cursor: pointer; padding: 3px; width: 50%; display: inline-block; vertical-align: top; box-sizing: border-box; }
+.worker.employee { padding: 2px; }
+.worker .inside { background: #fff; overflow: hidden; position: relative; }
+.worker .data { width: 100%; position: absolute; top: 0; left: 0; padding-left: 35px; box-sizing: border-box; }
+.worker .avatar { margin-left: -15px; width: 50px; display: inline-block; vertical-align: top; background: #fff; }
+.worker .name { display: inline-block; vertical-align: top; width: 100%; padding: 5px; background: #386971; color: #fff; letter-spacing: 0.1px; border-bottom-left-radius: 5px; text-align: center; box-sizing: border-box; }
 
 .cities { position: absolute; bottom: 48px; left: 0; width: 100%; z-index: 100; background: rgba(40, 120, 189, 0.9); color: #fff; }
 .cities .city { height: 26px; line-height: 26px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
