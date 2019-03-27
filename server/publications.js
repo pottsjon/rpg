@@ -78,6 +78,9 @@ Meteor.publish("workers", function (city) {
 		foundPub = Workers.find({ "$and": [{ owner: { $exists: false } },{ city: city }] });
 		workersPub = foundPub.observeChanges({
 			added: function(oId, oFields) {
+				const skills = Skills.find({ owner: oId },{ fields: { amount: 0 } }).fetch();
+				if ( skills )
+				oFields.skills = skills;
 				pub.added('workers', oId, oFields);
 			},
 			changed: function(oId, oFields) {

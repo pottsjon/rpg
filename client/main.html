@@ -1,6 +1,7 @@
 <head>
   <title>rpg</title>
   <link href="//cdn.materialdesignicons.com/3.2.89/css/materialdesignicons.min.css" rel="stylesheet" type="text/css" />
+  <link href="https://fonts.googleapis.com/css?family=Lato:400,700" rel="stylesheet">
   <meta name="viewport" content="width=device-width,initial-scale=1"/><meta charset="UTF-8"/>
 </head>
 
@@ -82,12 +83,22 @@
   </div>
 </template>
 
-<template name='skill'>
+<template name='skill-backup'>
   {{#if showTitle}}
     <div class="skill title">{{title}}</div>
   {{else}}
     <div class="skill">
       <span class="name">{{name}}</span><span class="amount">{{toNumbers amount}} ({{level}})</span>
+    </div>
+  {{/if}}
+</template>
+
+<template name='skill'>
+  {{#if showTitle}}
+    <div class="skill title">{{title}}</div>
+  {{else}}
+    <div class="skill round-sm">
+      {{{icon}}}<span class="amount">{{amount}}{{{level}}}</span>
     </div>
   {{/if}}
 </template>
@@ -129,7 +140,10 @@
     <div class="inside round-sm">
       {{{avatar}}}
       <div class="data">
-        <div class="name">{{name}}</div>
+        <div class="name round-sm">{{name}}</div>
+        <div class="skills">
+          {{#each skills}}{{> skill}}{{/each}}
+        </div>
       </div>
     </div>
   </div>
@@ -140,7 +154,25 @@
       <div class="inside round-sm">
       {{{avatar}}}
       <div class="data">
-        <div class="name">{{name}}</div>
+        <div class="name round-sm">{{name}}</div>
+        <div class="skills">
+          {{#each skills}}{{> skill}}{{/each}}
+        </div>
+        {{#if menu}}
+          {{#each tasks}}{{> task}}{{/each}}
+        {{/if}}
+      </div>
+    </div>
+    {{#each queues}}{{> queue}}{{/each}}
+  </div>
+</template>
+
+<template name='employee-backup'>
+  <div class="worker employee">
+      <div class="inside round-sm">
+      {{{avatar}}}
+      <div class="data">
+        <div class="name round-sm">{{name}}</div>
       </div>
     </div>
   </div>

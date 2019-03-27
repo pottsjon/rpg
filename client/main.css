@@ -47,12 +47,9 @@ img { pointer-events: none; }
 #login .logo { width: 100%; text-align: center; margin-bottom: 10px; }
 #login .logo img { width: 100%; max-width: 400px; height: auto; }
 
-.skill { padding: 2px; }
 .headline { padding: 0px 2px; background: #195261; color: #52b9d2; font-size: 12px; letter-spacing: 0.3px; }
-/* blue colored .skill { background: #bee0f9; border-bottom: 1px solid #8bb1ce; color: #326a94; } */
-.skill, .log { background: #efeded; border-bottom: 1px solid #9e9e9e; color: #585757; }
-.skill .amount, .leader .amount { float: right; }
-.skill.title { font-weight: bold; font-size: 12px; color: #0c5c71; background: #d8d8d8; }
+.log { background: #efeded; border-bottom: 1px solid #9e9e9e; color: #585757; }
+.leader .amount { float: right; }
 
 .tasks { background: #4c8ba2; }
 .gathering, .production { vertical-align: top; }
@@ -60,8 +57,8 @@ img { pointer-events: none; }
 
 .task { cursor: pointer; padding: 2px; width: 25%; position: relative; display: inline-block; vertical-align: middle; box-sizing: border-box; }
 .task .rim { background: rgba(0, 0, 0, 0.2); overflow: hidden; position: relative; }
-.task .image { width: 100%; }
-.task .icon { position: absolute; right: 0; bottom: 0; width: 30px; }
+.task .image { width: 100%; vertical-align: top; }
+.task .icon { position: absolute; right: 0; bottom: 0; width: 25px; }
 
 .logs { max-height: 300px; overflow-y: auto; }
 .logs .log { padding: 1px 2px; }
@@ -81,7 +78,7 @@ img { pointer-events: none; }
 .storage .container { padding: 2px; background: #4e3001; }
 
 .item { cursor: pointer; padding: 2px; width: 14.28%; display: inline-block; vertical-align: middle; box-sizing: border-box; text-align: center; }
-.item .image { overflow: hidden; position: relative; background: rgba(255, 255, 255, 0.3); }
+.item .image { vertical-align: top; overflow: hidden; position: relative; background: rgba(255, 255, 255, 0.3); }
 .item .image img { max-width: 100%; vertical-align: middle; }
 .item .amount { text-align: right; padding: 1px 4px; background: #969696; color: #fff; }
 .item .name { display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; text-transform: uppercase; font-weight: bold; font-size: 10px; letter-spacing: .4px; padding: 4px 5px; box-sizing: border-box; color: #e2e2e2; background: rgba(0, 0, 0, 0.5); overflow: hidden; text-align: center; }
@@ -106,11 +103,17 @@ img { pointer-events: none; }
 .employees { background: #5f949c; }
 
 .worker { cursor: pointer; padding: 3px; width: 50%; display: inline-block; vertical-align: top; box-sizing: border-box; }
-.worker.employee { padding: 2px; }
-.worker .inside { background: #fff; overflow: hidden; position: relative; }
-.worker .data { width: 100%; position: absolute; top: 0; left: 0; padding-left: 35px; box-sizing: border-box; }
-.worker .avatar { margin-left: -15px; width: 50px; display: inline-block; vertical-align: top; background: #fff; }
-.worker .name { display: inline-block; vertical-align: top; width: 100%; padding: 5px; background: #386971; color: #fff; letter-spacing: 0.1px; border-bottom-left-radius: 5px; text-align: center; box-sizing: border-box; }
+.worker .inside { min-height: 50px; background: #fff; overflow: hidden; position: relative; }
+.worker .data { font-size: 0; width: 100%; padding: 1px 1px 1px 35px; box-sizing: border-box; }
+.worker .avatar {  position: absolute; top: 0; left: 0; margin-left: -15px; width: 50px; display: inline-block; vertical-align: top; background: #fff; }
+.worker .name { font-size: 12px; display: inline-block; vertical-align: top; width: 100%; padding: 5px; background: #386971; color: #fff; letter-spacing: 0.1px; text-align: center; box-sizing: border-box; }
+.worker .queue { margin-top: 2px; height: 19px; }
+.worker .queue .text { height: 20px; line-height: 20px; }
+.worker .queue .progress { height: 20px; }
+.worker .skill { display: inline-block; margin: 2px 0 0 0; width: 50%; }
+.prospects .worker .skill { width: auto; }
+.worker .skill .icon { width: 24px; padding: 2px; display: inline-block; vertical-align: middle; }
+.worker .skill .amount { display: inline-block; vertical-align: middle; padding: 2px 5px; font-size: 14px; }
 
 .cities { position: absolute; bottom: 48px; left: 0; width: 100%; z-index: 100; background: rgba(40, 120, 189, 0.9); color: #fff; }
 .cities .city { height: 26px; line-height: 26px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }

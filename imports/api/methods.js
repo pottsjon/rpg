@@ -70,7 +70,8 @@ Meteor.methods({
 				owner: this.userId,
 				started: (new Date()).getTime()
 			}
-		})
+		});
+		Skills.update({ owner: workerId },{ $set: { boss: this.userId } },{ multi: true });
 	},
 	'startTask': function(taskId,workerId) {
 		if ( Meteor.isServer ) {

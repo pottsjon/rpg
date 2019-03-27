@@ -271,6 +271,17 @@ Template.queue.onDestroyed(function () {
 });
 
 Template.skill.helpers({
+	amount(){
+		if ( this.amount )
+		return numeral(this.amount).format('0,0.[00]a');
+	},
+	level(){
+		const level = ( !this.boss ? this.level : "("+this.level+")" );
+		return level;
+	},
+	icon(){
+		return "<img class='icon' src='/assets/icons/"+this.name.toLowerCase()+".png'/>";
+	},
 	showTitle(){
 		if ( this.title )
 		return true;
