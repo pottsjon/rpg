@@ -132,7 +132,7 @@
 </template>
 
 <template name='task'>
-  <div class="task noselect"><div class="rim round-sm">{{{item}}}</div></div>
+  <div class="task noselect {{next}}"><div class="rim round-sm"><div class="name"><div class="inside flex">{{name}}</div></div>{{{needed}}}{{{item}}}</div></div>
 </template>
 
 <template name='worker'>
@@ -197,19 +197,22 @@
 </template>
 
 <template name='production'>
-  {{#each stalls}}{{> stall}}{{/each}}
   {{#each tasks}}{{> task}}{{/each}}
 </template>
 
 <template name='gathering'>
-  {{#each stalls}}{{> stall}}{{/each}}
   {{#each tasks}}{{> task}}{{/each}}
 </template>
 
 <template name='stall'>
   <div class="stall">
-    <div class="job">
-      {{{task}}}
+    <div class="job flex">
+      <div class="square">
+        {{{worker}}}
+        <div class="circle round-lg noselect select_stall">
+          {{{task}}}
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -218,22 +221,55 @@
   <div id='overlay' class='map flex'>
       <div class='box slim'>
         <div class="background"></div>
-        <div class="storage">
-          <div class="container">
-          {{#each inventory}}{{> item}}{{/each}}
-          </div>
+        <div id="skills">
+          <div class="headline">Skills</div>
+          {{#each skills}}{{> skill}}{{/each}}
         </div>
-        <div class="headline">Skills</div>
-        {{#each skills}}{{> skill}}{{/each}}
         {{#each queues}}{{> queue}}{{/each}}
         <div class="tasks">
+          <div class="info">
+          </div>
+          <div class="stalls slim">
+            {{#each stalls}}{{> stall}}{{/each}}
+            {{#if showWorkers}}
+              <div class="employees slim">
+                {{#each employees}}{{> employee}}{{/each}}
+              </div>
+            {{/if}}
+            {{#if showTasks}}
+              <div class="tasks slim">
+                {{#each tasks}}{{> task}}{{/each}}
+              </div>
+            {{/if}}
+          </div>
           <div class="half gathering">{{> gathering}}</div><div class="half production">{{> production}}</div>
         </div>
         {{> hiring}}
+        {{> storage}}
         <div class="logs slim">
         {{#each logs}}{{> log}}{{/each}}
         </div>
       </div>
+  </div>
+</template>
+
+<template name='storage'>
+  <div class="storage">
+    <div class="header">
+      <div class="headline">{{city}} Storage</div>
+    </div>
+    <div class="sorts {{sorting}}">
+        {{#each sorts}}<div class="sort noselect {{selected}}">{{{arrow}}}{{text}}</div>{{/each}}
+    </div>
+    <div class="filters {{filtering}}">
+        {{#each filters}}<div class="filter noselect {{selected}}">{{{check}}}{{text}}</div>{{/each}}
+    </div>
+    <div class="buttons">
+      <span class="mdi round-sm mdi-filter-variant filter_items {{filter_back}}"></span><span class="mdi round-sm mdi-sort-variant sort_items {{sort_back}}"></span>
+    </div>
+    <div class="container slim">
+    {{#each inventory}}{{> item}}{{/each}}
+    </div>
   </div>
 </template>
 

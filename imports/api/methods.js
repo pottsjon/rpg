@@ -1,4 +1,13 @@
 Meteor.methods({
+	'stallWorker': function(stallId, workerId) {
+		const userId = ( Meteor.isServer ? this.userId : Meteor.userId() );
+		const find_worker = ( workerId == userId ? true : Workers.findOne({ "$and": [{ _id: workerId },{ owner: userId }] },{ fields: { _id: 1 } }) );
+		const find_pos = Positions.findOne({ "$and": [{ 'city.visiting': true },{ owner: userId }] },{ fields: { 'city.name': 1 } });
+		if ( find_worker && find_pos && find_pos.city.name ) {
+			const stall_update = ( stallId != 1 && stallId != 2 ) ? { "$and": [{ _id: stallId },{  owner: userId }] } : { "$and": [{ city: find_pos.city.name },{ number: stallId },{ owner: userId }] };
+			Stalls.update(stall_update,{ $set: { worker: workerId } },{ upsert: true });
+		};
+	},
 	'visitNext': function(visit) {
 		let position = Positions.findOne({ owner: this.userId });
 		const update = ( visit ? { $set: { visit: true } } : { $unset: { visit: "" } } );

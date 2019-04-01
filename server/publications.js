@@ -2,6 +2,10 @@
 sysMsgs = new Meteor.Collection("sysmsgs");
 hitCities = new Meteor.Collection("hitcities");
 
+Meteor.publish("stalls", function () {
+	return Stalls.find({ owner: this.userId });
+});
+
 Meteor.publish("positions", function () {
 	return Positions.find({ owner: this.userId });
 });
@@ -71,16 +75,39 @@ Meteor.publish("skills", function () {
 	};
 });
 
-Meteor.publish("workers", function (city) {
+Meteor.publish("prospects", function (city) {
 	if ( this.userId && city ) {
 		let pub = this,
-		workersPub = [],
+		prospectsPub = [],
 		foundPub = Workers.find({ "$and": [{ owner: { $exists: false } },{ city: city }] });
-		workersPub = foundPub.observeChanges({
+		prospectsPub = foundPub.observeChanges({
 			added: function(oId, oFields) {
 				const skills = Skills.find({ owner: oId },{ fields: { amount: 0 } }).fetch();
 				if ( skills )
 				oFields.skills = skills;
+				pub.added('prospects', oId, oFields);
+			},
+			changed: function(oId, oFields) {
+				pub.changed('prospects', oId, oFields);
+			},
+			removed: function(oId) {
+				pub.removed('prospects', oId);
+			}
+		});
+		pub.ready();
+		pub.onStop(function () {
+			prospectsPub.stop();
+		});
+	};
+});
+
+Meteor.publish("workers", function () {
+	let pub = this,
+	workersPub = [],
+    foundPub = Workers.find({ owner: this.userId });
+	if ( this.userId ) {
+		workersPub = foundPub.observeChanges({
+			added: function(oId, oFields) {
 				pub.added('workers', oId, oFields);
 			},
 			changed: function(oId, oFields) {
@@ -93,29 +120,6 @@ Meteor.publish("workers", function (city) {
 		pub.ready();
 		pub.onStop(function () {
 			workersPub.stop();
-		});
-	};
-});
-
-Meteor.publish("employees", function () {
-	let pub = this,
-	employeesPub = [],
-    foundPub = Workers.find({ owner: this.userId });
-	if ( this.userId ) {
-		employeesPub = foundPub.observeChanges({
-			added: function(oId, oFields) {
-				pub.added('employees', oId, oFields);
-			},
-			changed: function(oId, oFields) {
-				pub.changed('employees', oId, oFields);
-			},
-			removed: function(oId) {
-				pub.removed('employees', oId);
-			}
-		});
-		pub.ready();
-		pub.onStop(function () {
-			employeesPub.stop();
 		});
 	};
 });
