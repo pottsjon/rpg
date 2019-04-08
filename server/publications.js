@@ -2,8 +2,8 @@
 sysMsgs = new Meteor.Collection("sysmsgs");
 hitCities = new Meteor.Collection("hitcities");
 
-Meteor.publish("stalls", function () {
-	return Stalls.find({ owner: this.userId });
+Meteor.publish("stalls", function (city) {
+	return Stalls.find({ "$and": [{ owner: this.userId },{ city: city }] });
 });
 
 Meteor.publish("positions", function () {

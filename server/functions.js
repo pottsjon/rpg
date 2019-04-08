@@ -368,7 +368,7 @@ clearQueue = function (userId,single) {
     
     const find_queues = Queues.find(
         { "$and": lookup },
-        { fields: { owner: 1, worker: 1 } }
+        { fields: { owner: 1, worker: 1, city: 1, stall: 1 } }
     ).fetch(),
     time_now = (new Date()).getTime();
 
@@ -379,6 +379,12 @@ clearQueue = function (userId,single) {
     });
 
     find_queues.forEach((queue) => {
+        Stalls.update({ "$and": [
+            { city: queue.city },
+            { number: queue.stall }
+        ] },{ $unset: { worker: "", taskId: "" } },
+        function(err, count) {
+        });
         try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
         try { Meteor.clearTimeout(queueTimeout[queue.owner+queue.worker]) } catch (e) { };
     });

@@ -163,7 +163,6 @@
         {{/if}}
       </div>
     </div>
-    {{#each queues}}{{> queue}}{{/each}}
   </div>
 </template>
 
@@ -206,13 +205,12 @@
 
 <template name='stall'>
   <div class="stall">
-    <div class="job flex">
-      <div class="square">
-        {{{worker}}}
-        <div class="circle round-lg noselect select_stall">
-          {{{task}}}
-        </div>
+    <div class="job">
+      <div class="job-task noselect select_stall">
+        {{{tasking}}}
       </div>
+      {{{worker}}}
+      {{#each queues}}{{> queue}}{{/each}}
     </div>
   </div>
 </template>
@@ -221,31 +219,32 @@
   <div id='overlay' class='map flex'>
       <div class='box slim'>
         <div class="background"></div>
+        <div class="crafting">
+          {{> storage}}
+          <div class="stalls slim">
+            {{#if showMenus}}
+              {{#if showWorkers}}
+                <div class="employees slim">
+                  <div class="header flex"><span class="text">Choose Employee</span><span class="mdi mdi-close-box close close_menu"></span></div>
+                  {{#each employees}}{{> employee}}{{/each}}
+                </div>
+              {{/if}}
+              {{#if showTasks}}
+                <div class="tasks slim">
+                  <div class="header flex"><span class="text">Choose Task</span><span class="mdi mdi-close-box close close_menu"></span></div>
+                  {{#each tasks}}{{> task}}{{/each}}
+                </div>
+              {{/if}}
+            {{else}}
+              {{#each stalls}}{{> stall}}{{/each}}
+            {{/if}}
+          </div>
+        </div>
         <div id="skills">
           <div class="headline">Skills</div>
           {{#each skills}}{{> skill}}{{/each}}
         </div>
-        {{#each queues}}{{> queue}}{{/each}}
-        <div class="tasks">
-          <div class="info">
-          </div>
-          <div class="stalls slim">
-            {{#each stalls}}{{> stall}}{{/each}}
-            {{#if showWorkers}}
-              <div class="employees slim">
-                {{#each employees}}{{> employee}}{{/each}}
-              </div>
-            {{/if}}
-            {{#if showTasks}}
-              <div class="tasks slim">
-                {{#each tasks}}{{> task}}{{/each}}
-              </div>
-            {{/if}}
-          </div>
-          <div class="half gathering">{{> gathering}}</div><div class="half production">{{> production}}</div>
-        </div>
         {{> hiring}}
-        {{> storage}}
         <div class="logs slim">
         {{#each logs}}{{> log}}{{/each}}
         </div>
@@ -256,7 +255,7 @@
 <template name='storage'>
   <div class="storage">
     <div class="header">
-      <div class="headline">{{city}} Storage</div>
+      <div class="headline flex">{{city}} Storage</div>
     </div>
     <div class="sorts {{sorting}}">
         {{#each sorts}}<div class="sort noselect {{selected}}">{{{arrow}}}{{text}}</div>{{/each}}

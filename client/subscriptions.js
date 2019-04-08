@@ -16,4 +16,3 @@ Meteor.subscribe('sysmsgs');
 Meteor.subscribe('hitcities');
 Meteor.subscribe('cities');
 Meteor.subscribe('positions');
-Meteor.subscribe('stalls');

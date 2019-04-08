@@ -28,7 +28,8 @@ img { pointer-events: none; }
 .traveling .box { display: inline-block; background: #885530; width: 100%; max-width: 500px; height: 100%; position: relative; z-index: 110; }
 #overlay { height: 100%; padding: 28px 0 48px 0; box-sizing: border-box; }
 #overlay .box { width: 100%; max-width: 500px; height: 100%; overflow: auto; position: relative; background: #a7a7a7; z-index: 110; text-align: left; }
-#overlay .background { width: 100%; height: 33%; background: #5db0d0 url(/assets/bg-village.png) no-repeat center bottom; }
+#overlay .background { width: 100%; height: 40%; background: #5db0d0 url(/assets/bg-village.png) no-repeat center bottom; }
+#overlay .crafting { font-size: 0; width: 100%; height: 60%; background: #454756;  }
 
 #map { cursor: url('/assets/cursor-walk.png'), auto; background: #885530; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
 #map canvas:nth-child(2) { -moz-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); -webkit-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); }
@@ -54,26 +55,32 @@ img { pointer-events: none; }
 .gathering, .production { vertical-align: top; }
 .gathering { padding: 2px; background: #1d789a; }
 
-.task { cursor: pointer; padding: 2px; width: 25%; position: relative; display: inline-block; vertical-align: middle; box-sizing: border-box; }
+.task { cursor: pointer; padding: 2px; width: 33%; position: relative; display: inline-block; vertical-align: middle; box-sizing: border-box; }
 .task .rim { background: rgba(0, 0, 0, 0.2); overflow: hidden; position: relative; }
 .task.next .rim .image, .task.next .rim .icon { opacity: .5; }
 .task.next .needed { width: 100%; height: 100%; position: absolute; z-index: 10; text-align: center; background: rgba(23, 96, 123, 0.5); color: #d8d8d8; text-transform: uppercase; font-weight: bold; font-size: 10px; letter-spacing: .4px; }
 .task .image { width: 100%; vertical-align: top; }
 .task .icon { position: absolute; right: 0; bottom: 0; width: 25px; }
 
-.tasks { height: 33%; background: #4c8ba2; padding: 40px 0 0; position: relative; box-sizing: border-box; }
+.tasks { background: #507e90; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; padding: 2px; overflow-y: auto; box-sizing: border-box; }
 .tasks .half { display: none; }
 .tasks .info { position: absolute; top: 0; left: 0; width: 100%; height: 40px; background: rgba(0, 0, 0, 0.15); }
 
-.stalls { height: 100%; padding: 2px; overflow-x: auto; overflow-y: hidden; white-space: nowrap; box-sizing: border-box; }
-.stalls .employees { white-space: normal; overflow-y: auto; }
-.stall { width: 50%; height: 100%; padding: 2px; display: inline-block; vertical-align: top; box-sizing: border-box; }
-.stall .job { position: relative; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); text-align: center; }
-.stall .job .square { height: 80%; position: relative; }
-.stall .job .square:before { padding-left: 100%; }
-.stall .job .square .circle { width: 100%; height: 100%; background: #8ba5ab; cursor: pointer; }
-.stall .job .square .circle img { height: 100%; }
-.stall .job .square .worker { position: absolute; background: #9bcbd6; width: 60px; height: 60px; top: 0; left: 0; }
+.stalls { position: relative; font-size: 14px; height: 100%; width: 60%; padding: 40px 2px 2px; overflow-y: auto; display: inline-block; vertical-align: top; box-sizing: border-box; }
+.stalls .header { width: 100%; height: 36px; padding: 0 5px; box-sizing: border-box; position: relative; background: #213a44; }
+.stalls .header .text { color: #d4d4d3; text-transform: uppercase; font-size: 14px; font-weight: bold; line-height: 14px; width: 100%; padding-right: 30px; box-sizing: border-box; }
+.stalls .header .close { color: #2c86a9; position: absolute; top: 0; right: 2px; font-size: 30px; cursor: pointer; }
+.stalls .employees { overflow-y: auto; width: 100%; height: 100%; z-index: 10; }
+.stalls .employees .worker { width: 33%; }
+.stalls .employees .worker .name { display: none; }
+.stalls .employees .worker .skills { display: none; }
+.stalls .employees .worker .skill { width: 100%; }
+
+.stall {  position: relative; width: 100%; padding: 2px; display: inline-block; vertical-align: top; box-sizing: border-box; }
+.stall .job { padding-left: 60px; position: relative; width: 100%; min-height: 60px; background: rgba(0, 0, 0, 0.5); box-sizing: border-box; }
+.stall .job .job-worker { background: #9bcbd6; width: 30px; height: 30px; }
+.stall .job .job-task { position: absolute; width: 60px; height: 60px; background: #8ba5ab; cursor: pointer; top: 0; left: 0; }
+.stall .job .job-task img { width: 100%; height: auto; }
 
 .logs { max-height: 300px; overflow-y: auto; }
 .logs .log { padding: 1px 2px; }
@@ -90,9 +97,9 @@ img { pointer-events: none; }
 .inventory.tucked .item .image .name { display: none; }
 .inventory.tucked .item .amount { font-size: 10px; text-shadow: -1px 1px 0 #000, 1px -1px 0 #000, 1px 1px 0 #000, -1px -1px 0 #000; background: transparent; position: absolute; top: 27px; padding: 0; width: 40px; text-align: center; }
 
-.storage { height: 34%; background: #6f4e1d; padding: 40px 5px 5px; position: relative; box-sizing: border-box; }
-.storage .header { position: absolute; top: 0; left: 0; width: 100%; padding: 2px 5px; box-sizing: border-box; height: 40px; }
-.storage .header .headline { color: #d4d4d3; background: #37270e; text-transform: uppercase; font-size: 18px; font-weight: bold; width: 100%; height: 36px; line-height: 36px; padding: 0 5px; box-sizing: border-box; }
+.storage { height: 100%; width: 40%; background: #6f4e1d; padding: 40px 2px 2px; position: relative; display: inline-block; vertical-align: top; box-sizing: border-box; }
+.storage .header { position: absolute; top: 0; left: 0; width: 100%; padding: 2px; box-sizing: border-box; height: 40px; }
+.storage .header .headline { overflow: hidden; color: #d4d4d3; background: #37270e; text-transform: uppercase; font-size: 14px; font-weight: bold; width: 100%; height: 36px; line-height: 14px; padding: 0 90px 0 5px; box-sizing: border-box; }
 .storage .sorts, .storage .filters { display: none; position: absolute; z-index: 50; background: #8a6122; top: 38px; right: 5px; padding: 1px; min-width: 100px; }
 .storage .sorts.show, .storage .filters.show { display: inline-block; }
 .storage .sort, .storage .filter { cursor: pointer; margin-top: 1px; padding: 2px; background: #50360d; color: #cec4b6; font-size: 16px; }
@@ -104,16 +111,16 @@ img { pointer-events: none; }
 .storage .buttons { position: absolute; top: 4px; right: 10px; }
 .storage .buttons .mdi { display: inline-block; vertical-align: top; font-size: 26px; padding: 0 5px; margin-left: 5px; color: #987848; cursor: pointer; }
 .storage .buttons .mdi.selected { background: #58401a; }
-.storage .container { height: 100%; overflow-y: auto; padding: 2px; background: rgba(0, 0, 0, 0.5); box-sizing: border-box; }
+.storage .container { display: inline-block; height: 100%; overflow-y: auto; padding: 2px; background: rgba(0, 0, 0, 0.5); box-sizing: border-box; }
 
 .storage .slim { scrollbar-width: thin; scrollbar-color: #836e4e #6f4e1d; }
 .storage .slim::-webkit-scrollbar-track { background-color: #6f4e1d; }
 .storage .slim::-webkit-scrollbar-thumb { background-color: #836e4e; }
 
-.item { cursor: pointer; padding: 2px; width: 14.28%; display: inline-block; vertical-align: middle; box-sizing: border-box; text-align: center; }
+.item { cursor: pointer; padding: 2px; width: 33%; display: inline-block; vertical-align: middle; box-sizing: border-box; text-align: center; }
 .item .image { vertical-align: top; overflow: hidden; position: relative; background: rgba(255, 255, 255, 0.3); }
 .item .image img { max-width: 100%; vertical-align: middle; }
-.item .amount { text-align: right; padding: 1px 4px; background: #969696; color: #fff; }
+.item .amount { font-size: 11px; text-align: right; padding: 1px 4px; background: #969696; color: #fff; text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5), -1px -1px 1px rgba(0, 0, 0, 0.25); }
 .item .name, .task .name { display: none; z-index: 20; position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; text-transform: uppercase; font-weight: bold; font-size: 10px; letter-spacing: .4px; padding: 4px 5px; box-sizing: border-box; color: #e2e2e2; background: rgba(0, 0, 0, 0.5); overflow: hidden; text-align: center; }
 .item .name .inside, .task .name .inside { width: 100%; height: 100%; }
 .item:hover .name, .task:hover .name { display: block; }
@@ -123,21 +130,21 @@ img { pointer-events: none; }
 .item.epic .amount { background: #5c2d8e; }
 .item.legendary .amount { background: #d88300; }
 
-#skills, .hiring, .queue, .logs { display: none; }
+#skills, .hiring, .logs { display: none; }
 
 .leader { background: #b7b7b7; border-bottom: 1px solid #ababab; color: #4a4a4a; padding: 2px; }
 .leader .name { display: inline-block; }
 
-.queue { position: relative; height: 30px; background: #777; border-bottom: 1px solid #777; color: #333; }
+.queue { position: relative; height: 30px; background: #777; color: #333; }
 .queue .progress { z-index: 10; height: 30px; position: absolute; top: 0; left: 0; background: #b5b5b5; }
 .queue .text { z-index: 20; text-align: center; width: 100%; height: 30px; line-height: 30px; position: absolute; top: 0; left: 0; }
 .queue .award.hide { visibility: hidden; }
-.queue .award { visibility: visible; animation-name: rising; animation-timing-function: linear; transform-origin: center bottom; animation-duration: 1s; animation-fill-mode: both; position: absolute; z-index: 100; top: 0; width: 100%; text-align: center; }
+.queue .award { color: #fff; visibility: visible; animation-name: rising; animation-timing-function: linear; transform-origin: center bottom; animation-duration: 1s; animation-fill-mode: both; position: absolute; z-index: 100; top: 0; width: 100%; text-align: center; }
 @keyframes rising {0% {top:0px;} 50% {opacity: 1;} 100% {top:-50px; opacity: 0;}}
 
 .prospects { padding: 3px; background: #4ca28e; }
 
-.employees { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 5px; box-sizing: border-box; background: #264551; }
+.employees { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 5px; box-sizing: border-box; background: #325765; }
 
 .worker { cursor: pointer; padding: 3px; width: 50%; display: inline-block; vertical-align: top; box-sizing: border-box; }
 .worker .inside { min-height: 50px; background: #fff; overflow: hidden; position: relative; }

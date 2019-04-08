@@ -27,16 +27,6 @@ UI.body.onRendered(function() {
 					timeDep.changed();
 				};
 			}, 333);
-			let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
-			if ( visiting && visiting.city.name ) {
-				try { prospectsSub.stop() } catch (e) {};
-				prospectsSub = Meteor.subscribe('prospects', visiting.city.name);
-				try { invSub.stop() } catch (e) {};
-				invSub = Meteor.subscribe('inventory', visiting.city.name);
-			} else {
-				try { prospectsSub.stop() } catch (e) {};
-				try { invSub.stop() } catch (e) {};
-			};
 		} else {
 			try { sysMsgs.remove({}) } catch (e) {}
 		};
@@ -135,18 +125,73 @@ Template.game.helpers({
 Template.stall.helpers({
 	worker(){
 		if ( this.worker )
-		return "<div class='worker round-lg noselect'></div>";
+		return "<div class='job-worker noselect'></div>";
 	},
-	task(){
-		return "<img src='/assets/plus.png'/>";
-	}
+	tasking(){
+		if ( this.taskId ) {
+			const task = Tasks.findOne({ _id: this.taskId },{ fields: { items: 1 } });
+			return "<img src='/assets/inv/"+task.items[0].replace(/\s+/g, '-').toLowerCase()+".png'/>";
+		} else {
+			return "<img src='/assets/plus.png'/>";
+		};
+	},
+	queues(){
+		return Queues.find({ "$and": [
+			{ city: this.city },
+			{ stall: this.number },
+			{ completed: { $exists: false } }
+		] }).map(function(queue, index){
+			queue.award = sysMsgs.findOne({ updatedBy: queue.worker },{
+				sort: {
+					updatedAt: -1
+				},
+				fields: {
+					'item.name': 1,
+					amount: 1,
+					updatedAt: 1,
+					hide: 1
+				}
+			});
+			return queue;
+		});
+	},
 });
 
 Template.town.onCreated(function () {
 	this.stallSelect = new ReactiveVar( false );
+	Tracker.autorun(function() {
+		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
+		if ( visiting && visiting.city.name ) {
+			try { prospectsSub.stop() } catch (e) {};
+			prospectsSub = Meteor.subscribe('prospects', visiting.city.name);
+			try { invSub.stop() } catch (e) {};
+			invSub = Meteor.subscribe('inventory', visiting.city.name);
+			try { stallsSub.stop() } catch (e) {};
+			stallsSub = Meteor.subscribe('stalls', visiting.city.name);
+			visitingCity = visiting.city.name;
+			visitingCityDep.changed();
+		} else {
+			try { prospectsSub.stop() } catch (e) {};
+			try { invSub.stop() } catch (e) {};
+			try { stallsSub.stop() } catch (e) {};
+			visitingCity = false;
+			visitingCityDep.changed();
+		};
+	});
 });
 
 Template.town.events({
+	'click .task'(e, t) {
+		const stall = t.stallSelect.get();
+		const user_skill = Skills.findOne({ "$and": [{ owner: this.worker },{ name: this.skill }] },{ fields: { amount: 1 } });
+		const skill_amount = ( !user_skill || !user_skill.amount ? 0 : user_skill.amount );
+		if ( skill_amount >= this.exp )
+		Meteor.call('startTask', stall._id, this.worker, this._id);
+		t.stallSelect.set(false);
+	},
+	'click .close_menu'(e, t) {
+		t.stallSelect.set(false);
+	},
 	'click .select_stall'(e, t) {
 		if ( !this.worker ) {
 			t.stallSelect.set({ _id: this.number, workers: true });
@@ -164,27 +209,47 @@ Template.town.events({
 });
 
 Template.town.helpers({
+	showMenus(){
+		let selected = Template.instance().stallSelect.get();
+		if ( selected && ( selected.tasks || selected.workers ) )
+		return true;
+	},
+	showTasks(){
+		let selected = Template.instance().stallSelect.get();
+		if ( selected && selected.tasks )
+		return true;
+	},
+	showWorkers(){
+		let selected = Template.instance().stallSelect.get();
+		if ( selected && selected.workers )
+		return true;
+	},
 	tasks(){
-		let available_tasks = [], skills = {}, nexts = {}, tasks = Tasks.find({ type: "Resource" }).fetch();
-		skills["Farming"] = Skills.findOne({ "$and": [{ name: "Farming" },{ owner: Meteor.userId() }] },{ fields: { amount: 1 } });
-		skills["Mining"] = Skills.findOne({ "$and": [{ name: "Mining" },{ owner: Meteor.userId() }] },{ fields: { amount: 1 } });
-		skills["Logging"] = Skills.findOne({ "$and": [{ name: "Logging" },{ owner: Meteor.userId() }] },{ fields: { amount: 1 } });
-		tasks.forEach((task) => {
-			if ( task.exp == 0 || ( skills[task.skill] && skills[task.skill].amount && skills[task.skill].amount >= task.exp ) ) {
-			available_tasks.push(task);
-			} else if ( !nexts[task.skill] ) {
-				nexts[task.skill] = true;
-				task.next = true;
-				task.name = "You";
-				available_tasks.push(task);
-			};
-		});
-		return available_tasks;
+		let selected = Template.instance().stallSelect.get();
+		let stall = Stalls.findOne({ number: selected._id },{ fields: { worker: 1 } });
+		if ( stall.worker ) {
+			let worker = stall.worker, available_tasks = [], skills = {}, nexts = {}, tasks = Tasks.find({},{ sort: { exp: -1 } }).fetch();
+			skills["Farming"] = Skills.findOne({ "$and": [{ name: "Farming" },{ owner: worker }] },{ fields: { amount: 1 } });
+			skills["Mining"] = Skills.findOne({ "$and": [{ name: "Mining" },{ owner: worker }] },{ fields: { amount: 1 } });
+			skills["Logging"] = Skills.findOne({ "$and": [{ name: "Logging" },{ owner: worker }] },{ fields: { amount: 1 } });
+			tasks.forEach((task) => {
+				task.worker = worker;
+				if ( task.exp == 0 || ( skills[task.skill] && skills[task.skill].amount && skills[task.skill].amount >= task.exp ) ) {
+					available_tasks.push(task);
+				} else if ( !nexts[task.skill] ) {
+					nexts[task.skill] = true;
+					task.next = true;
+					task.name = "You";
+					available_tasks.push(task);
+				};
+			});
+			return available_tasks;
+		};
 	},
 	employees() {
-		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
-		if ( visiting && visiting.city.name ) {
-			let employees = Workers.find({ "$and": [{ city: visiting.city.name },{ owner: Meteor.userId() }] },{
+		visitingCityDep.depend();
+		if ( visitingCity ) {
+			let employees = Workers.find({ "$and": [{ city: visitingCity },{ owner: Meteor.userId() }] },{
 				sort: {
 					working: -1,
 					started: -1
@@ -207,20 +272,10 @@ Template.town.helpers({
 			return employees;
 		};
 	},
-	showTasks(){
-		let selected = Template.instance().stallSelect.get();
-		if ( selected.tasks )
-		return true;
-	},
-	showWorkers(){
-		let selected = Template.instance().stallSelect.get();
-		if ( selected.workers )
-		return true;
-	},
 	stalls(){
 		let stalls = Stalls.find({},{ sort: { number: 1 } }).fetch();
-		if ( stalls.length < 2 )
-		for ( let n = stalls.length; 2 > n; n++ ) {
+		if ( stalls.length < 3 )
+		for ( let n = stalls.length; 3 > n; n++ ) {
 			stalls.push({ number: n+1 });
 		}
 		return stalls;
@@ -258,9 +313,9 @@ Template.town.helpers({
 		});
 	},
 	logs(){
-		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
-		if ( visiting && visiting.city.name )
-		return sysMsgs.find({ city: visiting.city.name },{ sort: { updatedAt: -1 }, limit: 200 });
+		visitingCityDep.depend();
+		if ( visitingCity )
+		return sysMsgs.find({ city: visitingCity },{ sort: { updatedAt: -1 }, limit: 200 });
 	}
 });
 
@@ -354,9 +409,10 @@ Template.storage.helpers({
 		return [{ text: "Amount" },{ text: "Level" },{ text: "Type" },{ text: "Name" },{ text: "Rarity" },{ text: "Updated" }];
 	},
 	filters(){
-		let filters = Template.instance().storageFilter.get(), types = {}, visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
-		if ( visiting && visiting.city.name ) {
-			let inventory = Inventory.find({ city: visiting.city.name },{ fields: { 'item.type': 1 } }).fetch();
+		visitingCityDep.depend();
+		let filters = Template.instance().storageFilter.get(), types = {};
+		if ( visitingCity ) {
+			let inventory = Inventory.find({ city: visitingCity },{ fields: { 'item.type': 1 } }).fetch();
 			var flags = [], output = [], l = inventory.length, i;
 			for( i=0; i<l; i++) {
 				if( flags[inventory[i].item.type] ) continue;
@@ -377,18 +433,18 @@ Template.storage.helpers({
 		return "show";
 	},
 	city(){
-		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
-		if ( visiting && visiting.city.name )
-		return visiting.city.name;
+		visitingCityDep.depend();
+		if ( visitingCity )
+		return visitingCity;
 	},
 	inventory(){
-		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
+		visitingCityDep.depend();
 		let filters = Template.instance().storageFilter.get();
 		let sorts = Template.instance().storageSort.get();
 		if ( filters.length == 0 )
 		filters = [{}];
-		if ( visiting && visiting.city.name )
-		return Inventory.find({ "$and": [{ city: visiting.city.name },{ "$or": filters }] },{ sort: sorts });
+		if ( visitingCity )
+		return Inventory.find({ "$and": [{ city: visitingCity },{ "$or": filters }] },{ sort: sorts });
 	}
 });
 
@@ -575,9 +631,9 @@ Template.hiring.helpers({
 		return sysMsgs.find({},{ sort: { updatedAt: -1 }, limit: 200 });
 	},
 	employees() {
-		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
-		if ( visiting && visiting.city.name )
-		return Workers.find({ "$and": [{ city: visiting.city.name },{ owner: Meteor.userId() }] },{
+		visitingCityDep.depend();
+		if ( visitingCity )
+		return Workers.find({ "$and": [{ city: visitingCity },{ owner: Meteor.userId() }] },{
 			sort: {
 				working: -1,
 				started: -1
