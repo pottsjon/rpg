@@ -205,11 +205,12 @@
 
 <template name='stall'>
   <div class="stall">
-    <div class="job">
-      <div class="job-task noselect select_stall">
+    <div class="job {{stage}}">
+      <div class="job-task noselect select_stall {{flex}}">
         {{{tasking}}}
       </div>
       {{{worker}}}
+      {{{warn}}}
       {{#each queues}}{{> queue}}{{/each}}
     </div>
   </div>
@@ -224,18 +225,25 @@
           <div class="stalls slim">
             {{#if showMenus}}
               {{#if showWorkers}}
+                <div class="header">
+                  <div class="headline flex"><span class="text">Choose Employee</span><span class="mdi mdi-close-box close close_menu"></span></div>
+                </div>
                 <div class="employees slim">
-                  <div class="header flex"><span class="text">Choose Employee</span><span class="mdi mdi-close-box close close_menu"></span></div>
                   {{#each employees}}{{> employee}}{{/each}}
                 </div>
               {{/if}}
               {{#if showTasks}}
                 <div class="tasks slim">
-                  <div class="header flex"><span class="text">Choose Task</span><span class="mdi mdi-close-box close close_menu"></span></div>
+                  <div class="header">
+                    <div class="headline flex"><span class="text">Choose Task</span><span class="mdi mdi-close-box close close_menu"></span></div>
+                  </div>
                   {{#each tasks}}{{> task}}{{/each}}
                 </div>
               {{/if}}
             {{else}}
+              <div class="header">
+                <div class="headline flex"><span class="text">{{city}} Work Stalls</span></div>
+              </div>
               {{#each stalls}}{{> stall}}{{/each}}
             {{/if}}
           </div>
@@ -255,7 +263,7 @@
 <template name='storage'>
   <div class="storage">
     <div class="header">
-      <div class="headline flex">{{city}} Storage</div>
+      <div class="headline flex"><span class="text">{{city}} Storage</span></div>
     </div>
     <div class="sorts {{sorting}}">
         {{#each sorts}}<div class="sort noselect {{selected}}">{{{arrow}}}{{text}}</div>{{/each}}

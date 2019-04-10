@@ -123,16 +123,38 @@ Template.game.helpers({
 });
 
 Template.stall.helpers({
+	warn(){
+		if ( !this.taskId && this.worker )
+		return "<div class='warn flex'>Choose Task</div>";
+	},
+	flex(){
+		if ( !this.taskId && !this.worker )
+		return "flex";
+	},
+	stage(){
+		if ( this.taskId ) {
+			return "running";
+		} else if ( this.worker ) {
+			return "choose";
+		} else {
+			return "start";
+		};
+	},
 	worker(){
-		if ( this.worker )
-		return "<div class='job-worker noselect'></div>";
+		if ( this.worker ) {
+			const avatar = ( this.worker == Meteor.userId() ? "walking-1" : "workers/person-1" );
+			const tasking = ( !this.taskId ? "tasking" : "" );
+			return "<div class='job-worker noselect "+tasking+"'><img src='/assets/"+avatar+".png'/></div>";
+		};
 	},
 	tasking(){
 		if ( this.taskId ) {
 			const task = Tasks.findOne({ _id: this.taskId },{ fields: { items: 1 } });
 			return "<img src='/assets/inv/"+task.items[0].replace(/\s+/g, '-').toLowerCase()+".png'/>";
-		} else {
+		} else if ( this.worker ) {
 			return "<img src='/assets/plus.png'/>";
+		} else {
+			return "<div class='open'>Open Stall</div>";
 		};
 	},
 	queues(){
@@ -209,6 +231,11 @@ Template.town.events({
 });
 
 Template.town.helpers({
+	city(){
+		visitingCityDep.depend();
+		if ( visitingCity )
+		return visitingCity;
+	},
 	showMenus(){
 		let selected = Template.instance().stallSelect.get();
 		if ( selected && ( selected.tasks || selected.workers ) )
@@ -693,7 +720,8 @@ Template.employee.events({
 
 Template.employee.helpers({
 	avatar() {
-		return "<img class='avatar' src='/assets/workers/person-"+this.avatar+".png'/>"
+		const avatar = ( !this.avatar ? "walking-1" : "workers/person-"+this.avatar );
+		return "<img class='avatar' src='/assets/"+avatar+".png'/>"
 	}
 });
 
