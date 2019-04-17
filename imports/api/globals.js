@@ -16,12 +16,17 @@ formatTimer = function(secs) {
 	return finalHours+finalMinutes+finalSecs;
 };
 
-itemLevel = function (exp) {
-    // 243215879437 exp is the end of level 9999
+itemLevel = function (exp, next) {
+	// 243215879437 exp is the end of level 9999
 	for ( let i = 1; 10000000 >= i; i++ ) {
-		let level_amount = ((4000*i*(i/1.25))*(-Math.log(4000*i)/Math.log(0.0000000001)));
+		let level_amount = Math.round((4000*i*(i/1.25))*(-Math.log(4000*i)/Math.log(0.0000000001)));
 		if (  exp <= level_amount ) {
-			return i
+			if ( next ) {
+				let next_level = Math.round((4000*(i+1)*((i+1)/1.25))*(-Math.log(4000*(i+1))/Math.log(0.0000000001)));
+				return { level: i, next: next_level };
+			} else {
+				return i
+			};
 			break;
 		};
 	}

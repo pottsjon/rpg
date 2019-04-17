@@ -358,13 +358,13 @@ clearQueues = function () {
 	});
 };
 
-clearQueue = function (userId,single) {
+clearQueue = function (userId,workerId) {
     let lookup = [
         { owner: userId },
         { completed: { $exists: false } }
     ];
-    if ( single )
-    lookup.push({ worker: userId });
+    if ( workerId )
+    lookup.push({ worker: workerId });
     
     const find_queues = Queues.find(
         { "$and": lookup },
@@ -379,10 +379,15 @@ clearQueue = function (userId,single) {
     });
 
     find_queues.forEach((queue) => {
-        Stalls.update({ "$and": [
-            { city: queue.city },
-            { number: queue.stall }
-        ] },{ $unset: { worker: "", taskId: "" } },
+        Stalls.update({" $and": [
+            { number: queue.stall },
+            { city: queue.city }
+        ] },
+        { $unset: { worker: "", taskId: "" } },
+        function(err, count) {
+        });
+        Workers.update({ _id: queue.worker },
+        { $unset: { working: "" } },
         function(err, count) {
         });
         try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };

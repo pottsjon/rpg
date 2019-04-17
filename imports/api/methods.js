@@ -2,11 +2,13 @@ Meteor.methods({
 	'visitNext': function(visit) {
 		let position = Positions.findOne({ owner: this.userId });
 		const update = ( visit ? { $set: { visit: true } } : { $unset: { visit: "" } } );
-		Positions.update({ _id: position._id },update);
+		Positions.update({ _id: position._id },update,
+		function(err, count) {
+		});
 	},
 	'startMovement': function(angle, angleDeg) {
 		let position = Positions.findOne({ owner: this.userId });
-		const time_now = (new Date()).getTime();		
+		const time_now = (new Date()).getTime();
 		const find_pos = realPosition(position);
 		let set_position = {
 			x: find_pos.x,
@@ -21,11 +23,13 @@ Meteor.methods({
 		set_position['city.visiting'] = false;
 		Positions.update({ _id: position._id },{
 			$set: set_position
+		},
+		function(err, count) {
 		});
 		set_position.owner = this.userId;
 		if ( Meteor.isServer ) {
 			cityTimerStart(set_position);
-			clearQueue(this.userId, true);
+			clearQueue(this.userId, this.userId);
 		};
 		return set_position;
 	},
@@ -59,6 +63,8 @@ Meteor.methods({
 					started: "",
 					visit: ""
 				}
+			},
+			function(err, count) {
 			});
 		};
 	},
@@ -71,15 +77,38 @@ Meteor.methods({
 				started: (new Date()).getTime()
 			}
 		});
-		Skills.update({ owner: workerId },{ $set: { boss: this.userId } },{ multi: true });
+		Skills.update({ owner: workerId },{ $set: { boss: this.userId } },{ multi: true },
+		function(err, count) {
+		});
 	},
 	'stallWorker': function(stallId, workerId) {
-		const userId = ( Meteor.isServer ? this.userId : Meteor.userId() );
-		const find_worker = ( workerId == userId ? true : Workers.findOne({ "$and": [{ _id: workerId },{ owner: userId }] },{ fields: { _id: 1 } }) );
-		const find_pos = Positions.findOne({ "$and": [{ 'city.visiting': true },{ owner: userId }] },{ fields: { 'city.name': 1 } });
-		if ( find_worker && find_pos && find_pos.city.name ) {
-			const stall_update = ( stallId != 1 && stallId != 2 ) ? { "$and": [{ _id: stallId },{  owner: userId }] } : { "$and": [{ city: find_pos.city.name },{ number: stallId },{ owner: userId }] };
-			Stalls.update(stall_update,{ $set: { worker: workerId } },{ upsert: true });
+		if ( Meteor.isServer ) {
+			const time_now = (new Date()).getTime();
+			const find_worker = ( workerId == this.userId ? true : Workers.findOne({ "$and": [{ _id: workerId },{ owner: this.userId }] },{ fields: { _id: 1 } }) );
+			const find_pos = Positions.findOne({ "$and": [{ 'city.visiting': true },{ owner: this.userId }] },{ fields: { 'city.name': 1 } });
+			if ( find_worker && find_pos && find_pos.city.name ) {
+				const stall_update = ( stallId != 1 && stallId != 2 ) ? { "$and": [{ _id: stallId },{  owner: this.userId }] } : { "$and": [{ city: find_pos.city.name },{ number: stallId },{ owner: this.userId }] };
+				const stall = Stalls.findOne(stall_update,{ fields: {
+					worker: 1,
+					number: 1
+				} });
+				if ( stall && stall.number )
+				Queues.update({"$and": [
+					{ owner: this.userId },
+					{ worker: stall.worker },
+					{ city: find_pos.city.name },
+					{ stall: stall.number },
+					{ started: { $exists: true } },
+					{ completed: { $exists: false } }
+				]},{ $set: {
+					completed: time_now
+				} },function(err, count) {
+				});
+				if ( !stall || stall.worker != workerId )
+				Stalls.update(stall_update,{ $set: { worker: workerId }, $unset: { taskId: "" } },{ upsert: true },
+				function(err, count) {
+				});
+			};
 		};
 	},
 	'startTask': function(stallId, workerId, taskId) {

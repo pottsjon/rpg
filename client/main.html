@@ -93,16 +93,6 @@
   {{/if}}
 </template>
 
-<template name='skill'>
-  {{#if showTitle}}
-    <div class="skill title">{{title}}</div>
-  {{else}}
-    <div class="skill round-sm">
-      {{{icon}}}<span class="amount">{{amount}}{{{level}}}</span>
-    </div>
-  {{/if}}
-</template>
-
 <template name='item-backup'>
   <div class="item {{toLowerCase item.rarity}}">  
       <span class="name">{{item.name.plural}}</span><span class="amount">{{toNumbers amount}}</span>
@@ -111,7 +101,7 @@
 
 <template name='item'>
   <div class="item noselect {{toLowerCase item.rarity}}">
-    <div class="image"><div class="name select"><div class="inside flex">{{item.name.single}}</div></div>{{{img}}}<div class='amount select'>{{toNumbers amount}}</div></div>
+    <div class="image round-lt"><div class="name select"><div class="inside flex">{{item.name.plural}}</div></div>{{{img}}}<div class='amount select'>{{toNumbers amount}}</div></div>
   </div>
 </template>
 
@@ -135,6 +125,24 @@
   <div class="task noselect {{next}}"><div class="rim round-sm"><div class="name"><div class="inside flex">{{name}}</div></div>{{{needed}}}{{{item}}}</div></div>
 </template>
 
+<template name='skill'>
+  {{#if showTitle}}
+    <div class="skill title">{{title}}</div>
+  {{else}}
+    <div class="skill round-sm">
+      {{{icon}}}<span class="amount">{{amount}}{{{level}}}</span>
+    </div>
+  {{/if}}
+</template>
+
+<template name='skillLevel'>
+  <div class="skill">
+    <div class="inner round-sm">
+      {{{icon}}}<span class="amount">{{level}}</span>
+    </div>
+  </div>
+</template>
+
 <template name='worker'>
   <div class="worker">
     <div class="inside round-sm">
@@ -151,17 +159,14 @@
 
 <template name='employee'>
   <div class="worker employee">
-      <div class="inside round-sm">
-      {{{avatar}}}
-      <div class="data">
-        <div class="name round-sm">{{name}}</div>
-        <div class="skills">
-          {{#each skills}}{{> skill}}{{/each}}
+        <div class="inside round-sm">
+        <div class="topper">
+          {{{avatar}}}<div class="name">{{name}}</div>
         </div>
+        {{#each skills}}{{> skillLevel}}{{/each}}
         {{#if menu}}
           {{#each tasks}}{{> task}}{{/each}}
         {{/if}}
-      </div>
     </div>
   </div>
 </template>
@@ -205,13 +210,12 @@
 
 <template name='stall'>
   <div class="stall">
-    <div class="job {{stage}}">
-      <div class="job-task noselect select_stall {{flex}}">
-        {{{tasking}}}
+    <div class="job round-sm {{stage}}">
+      {{{stall}}}
+      <div class="data">
+        {{{skill}}}
+        {{#each queues}}{{> queue}}{{/each}}
       </div>
-      {{{worker}}}
-      {{{warn}}}
-      {{#each queues}}{{> queue}}{{/each}}
     </div>
   </div>
 </template>

@@ -123,13 +123,15 @@ Template.game.helpers({
 });
 
 Template.stall.helpers({
-	warn(){
-		if ( !this.taskId && this.worker )
-		return "<div class='warn flex'>Choose Task</div>";
-	},
-	flex(){
-		if ( !this.taskId && !this.worker )
-		return "flex";
+	skill(){
+		if ( this.taskId && this.worker ) {
+			const task = Tasks.findOne({ _id: this.taskId },{ fields: { skill: 1 } });
+			const skill = Skills.findOne({ "$and": [{ owner: this.worker },{ name: task.skill }] },{ fields: { amount: 1 } });
+			const amount = ( !skill || !skill.amount ? 0 : skill.amount );
+			const level = itemLevel(amount, true);
+			const width = (amount/level.next)*100;
+			return "<div class='skill-text'><img class='icon' src='/assets/icons/"+task.skill.toLowerCase()+".png'/>"+task.skill+"<span class='amount'>"+numeral(amount).format('0,0.[00]a')+"/"+numeral(level.next).format('0,0.[00]a')+"</span></div><div class='skill'><div class='progress' style='width:"+width+"%;'></div></div>";
+		};
 	},
 	stage(){
 		if ( this.taskId ) {
@@ -140,22 +142,23 @@ Template.stall.helpers({
 			return "start";
 		};
 	},
-	worker(){
+	stall(){
+		let inside = "", worker = "", flex = "";
 		if ( this.worker ) {
-			const avatar = ( this.worker == Meteor.userId() ? "walking-1" : "workers/person-1" );
-			const tasking = ( !this.taskId ? "tasking" : "" );
-			return "<div class='job-worker noselect "+tasking+"'><img src='/assets/"+avatar+".png'/></div>";
+			const find_worker = Workers.findOne({ _id: this.worker },{ fields: { avatar: 1 } });
+			const avatar = ( this.worker == Meteor.userId() ? "walking-1" : "workers/person-"+find_worker.avatar );
+			worker = "<div class='job-worker select_worker noselect'><div class='round-lg circle'><img src='/assets/"+avatar+".png'/></div></div>";
 		};
-	},
-	tasking(){
 		if ( this.taskId ) {
 			const task = Tasks.findOne({ _id: this.taskId },{ fields: { items: 1 } });
-			return "<img src='/assets/inv/"+task.items[0].replace(/\s+/g, '-').toLowerCase()+".png'/>";
+			inside = "<img src='/assets/inv/"+task.items[0].replace(/\s+/g, '-').toLowerCase()+".png'/>";
 		} else if ( this.worker ) {
-			return "<img src='/assets/plus.png'/>";
+			inside = "<div class='warn round-sm flex'>Choose Task</div>";
 		} else {
-			return "<div class='open'>Open Stall</div>";
+			flex = "flex";
+			inside = "<div class='open'>Open Stall</div>";
 		};
+		return worker+"<div class='job-task noselect select_stall "+flex+"'>"+inside+"</div>";
 	},
 	queues(){
 		return Queues.find({ "$and": [
@@ -214,6 +217,9 @@ Template.town.events({
 	'click .close_menu'(e, t) {
 		t.stallSelect.set(false);
 	},
+	'click .select_worker'(e, t) {
+		t.stallSelect.set({ _id: this.number, workers: true });
+	},
 	'click .select_stall'(e, t) {
 		if ( !this.worker ) {
 			t.stallSelect.set({ _id: this.number, workers: true });
@@ -255,7 +261,7 @@ Template.town.helpers({
 		let selected = Template.instance().stallSelect.get();
 		let stall = Stalls.findOne({ number: selected._id },{ fields: { worker: 1 } });
 		if ( stall.worker ) {
-			let worker = stall.worker, available_tasks = [], skills = {}, nexts = {}, tasks = Tasks.find({},{ sort: { exp: -1 } }).fetch();
+			let worker = stall.worker, available_tasks = [], skills = {}, nexts = {}, tasks = Tasks.find({},{ sort: { type: -1, skill: 1, exp: 1 } }).fetch();
 			skills["Farming"] = Skills.findOne({ "$and": [{ name: "Farming" },{ owner: worker }] },{ fields: { amount: 1 } });
 			skills["Mining"] = Skills.findOne({ "$and": [{ name: "Mining" },{ owner: worker }] },{ fields: { amount: 1 } });
 			skills["Logging"] = Skills.findOne({ "$and": [{ name: "Logging" },{ owner: worker }] },{ fields: { amount: 1 } });
@@ -284,7 +290,7 @@ Template.town.helpers({
 			}).fetch();
 			employees.map(function(emp, index){
 				const workerId = emp._id
-				emp.skills = Skills.find({ owner: workerId });
+				emp.skills = Skills.find({ "$and": [{ owner: workerId },{ level: { $gt: 1 } }] });
 				emp.queues = Queues.find({ "$and": [
 					{ worker: { $ne: Meteor.userId() } },
 					{ worker: workerId },
@@ -301,8 +307,8 @@ Template.town.helpers({
 	},
 	stalls(){
 		let stalls = Stalls.find({},{ sort: { number: 1 } }).fetch();
-		if ( stalls.length < 3 )
-		for ( let n = stalls.length; 3 > n; n++ ) {
+		if ( stalls.length < 2 )
+		for ( let n = stalls.length; 2 > n; n++ ) {
 			stalls.push({ number: n+1 });
 		}
 		return stalls;
@@ -586,6 +592,12 @@ Template.skill.helpers({
 	}
 });
 
+Template.skillLevel.helpers({
+	icon(){
+		return "<img class='icon' src='/assets/icons/"+this.name.toLowerCase()+".png'/>";
+	}
+});
+
 Template.item.helpers({
 	img(){
 		let img = this.item.name.single.replace(/\s+/g, '-').toLowerCase();
@@ -721,7 +733,7 @@ Template.employee.events({
 Template.employee.helpers({
 	avatar() {
 		const avatar = ( !this.avatar ? "walking-1" : "workers/person-"+this.avatar );
-		return "<img class='avatar' src='/assets/"+avatar+".png'/>"
+		return "<img class='avatar round-lg' src='/assets/"+avatar+".png'/>"
 	}
 });
 
