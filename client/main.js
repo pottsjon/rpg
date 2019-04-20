@@ -16,6 +16,7 @@ import '../imports/api/methods.js';
 import './management/main.js';
 import './map.js';
 import { SlowBuffer } from 'buffer';
+import { ENGINE_METHOD_CIPHERS } from 'constants';
 
 UI.body.onRendered(function() {
 	Tracker.autorun(function() {
@@ -146,7 +147,9 @@ Template.stall.helpers({
 		let inside = "", worker = "", flex = "";
 		if ( this.worker ) {
 			const find_worker = Workers.findOne({ _id: this.worker },{ fields: { avatar: 1 } });
-			const avatar = ( this.worker == Meteor.userId() ? "walking-1" : "workers/person-"+find_worker.avatar );
+			const player = Player.findOne({},{ fields: { avatar: 1 } });
+			const pic = ( player && player.avatar ? player.avatar : 1 );
+			const avatar = ( this.worker == Meteor.userId() ? "players/avatar-"+pic : "workers/person-"+find_worker.avatar );
 			worker = "<div class='job-worker select_worker noselect'><div class='round-lg circle'><img src='/assets/"+avatar+".png'/></div></div>";
 		};
 		if ( this.taskId ) {
@@ -183,7 +186,9 @@ Template.stall.helpers({
 });
 
 Template.town.onCreated(function () {
+	this.taskSelect = new ReactiveVar( false );
 	this.stallSelect = new ReactiveVar( false );
+	this.showAvatars = new ReactiveVar( false );
 	Tracker.autorun(function() {
 		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
 		if ( visiting && visiting.city.name ) {
@@ -206,6 +211,21 @@ Template.town.onCreated(function () {
 });
 
 Template.town.events({
+	'click .heading'(e,t) {
+		t.taskSelect.set( this.heading );
+	},
+	'click .select_avatar'(e,t) {
+		e.stopPropagation();
+		const show = t.showAvatars.get();
+		const set = ( !show ? true : false );
+		t.showAvatars.set(set);
+	},
+	'click .choose_avatar'(e,t) {
+		Meteor.call('chooseAvatar', this.image);
+	},
+	'click .box'(e,t) {
+		t.showAvatars.set(false);
+	},
 	'click .task'(e, t) {
 		const stall = t.stallSelect.get();
 		const user_skill = Skills.findOne({ "$and": [{ owner: this.worker },{ name: this.skill }] },{ fields: { amount: 1 } });
@@ -237,6 +257,19 @@ Template.town.events({
 });
 
 Template.town.helpers({
+	image(){
+		return "<div class='avatar choose_avatar'><img src='/assets/players/avatar-"+this.image+".png'</div>";
+	},
+	avatars(){
+		let avatars = [];
+		for ( let i = 1; 60 >= i; i++ ) {
+			avatars.push({ image: i });
+		}
+		return avatars;
+	},
+	showAvatars(){
+		return Template.instance().showAvatars.get();
+	},
 	city(){
 		visitingCityDep.depend();
 		if ( visitingCity )
@@ -259,13 +292,21 @@ Template.town.helpers({
 	},
 	tasks(){
 		let selected = Template.instance().stallSelect.get();
+		let taskSelect = Template.instance().taskSelect.get();
 		let stall = Stalls.findOne({ number: selected._id },{ fields: { worker: 1 } });
 		if ( stall.worker ) {
-			let worker = stall.worker, available_tasks = [], skills = {}, nexts = {}, tasks = Tasks.find({},{ sort: { type: -1, skill: 1, exp: 1 } }).fetch();
+			let worker = stall.worker, available_tasks = [], task_skills = [], skills = {}, nexts = {}, tasks = Tasks.find({},{ sort: { type: -1, skill: 1, exp: 1 } }).fetch();
 			skills["Farming"] = Skills.findOne({ "$and": [{ name: "Farming" },{ owner: worker }] },{ fields: { amount: 1 } });
 			skills["Mining"] = Skills.findOne({ "$and": [{ name: "Mining" },{ owner: worker }] },{ fields: { amount: 1 } });
 			skills["Logging"] = Skills.findOne({ "$and": [{ name: "Logging" },{ owner: worker }] },{ fields: { amount: 1 } });
 			tasks.forEach((task) => {
+				if ( ( taskSelect && taskSelect == task.skill ) || ( !taskSelect && task.skill == "Farming" ) )
+					task.show = true;
+				if ( !task_skills[task.skill] ) {
+					task_skills[task.skill] = true;
+					const task_push = ( task.show ? { heading: task.skill, selected: true } : { heading: task.skill } );
+					available_tasks.push(task_push);
+				};
 				task.worker = worker;
 				if ( task.exp == 0 || ( skills[task.skill] && skills[task.skill].amount && skills[task.skill].amount >= task.exp ) ) {
 					available_tasks.push(task);
@@ -352,7 +393,29 @@ Template.town.helpers({
 	}
 });
 
+Template.player.helpers({
+	avatar(){
+		const player = Player.findOne({},{ fields: { avatar: 1 } });
+		if ( player && player.avatar )
+		return player.avatar;
+	},
+	username(){
+		const player = Player.findOne({},{ fields: { username: 1 } });
+		if ( player && player.username )
+		return player.username;
+	},
+	energy(){
+		const player = Player.findOne({},{ fields: { energy: 1, maxEnergy: 1 } });
+		const energy = ( player && player.energy ? player.energy : 0 );
+		const max = ( player && player.maxEnergy ? player.maxEnergy : 0 );
+		const width = ( energy >= 1 ? Math.ceil((energy/max)*100) : 0 );
+		return "<div class='bar' style='width:"+width+"%;'><div class='text'>"+energy+"/"+max+"</div></div>";
+	}
+});
+
 Template.storage.onCreated(function () {
+	this.showMenu = new ReactiveVar( false );
+	this.showQuantity = new ReactiveVar( false );
 	this.storageMenu = new ReactiveVar( false );
 	this.storageSort = new ReactiveVar({ amount: -1 });
 	this.storageFilter = new ReactiveVar([]);
@@ -400,10 +463,87 @@ Template.storage.events({
 		} else {
 			t.storageMenu.set(false);
 		};
+	},
+	'click .item'(e,t) {
+		e.stopPropagation();
+		t.showMenu.set(this._id);
+	},
+	'click .choices .inner'(e,t) {
+		e.stopPropagation();
+	},
+	'click .choice'(e,t) {
+		e.stopPropagation();
+		t.showQuantity.set(this.call);
+		Meteor.setTimeout(function() {
+			document.getElementById("choiceQuantity").value = "";
+			document.getElementById("choiceQuantity").focus();
+		}, 50);
+	},
+	'click .choose'(e,t) {
+		e.stopPropagation();
+		const itemId = t.showMenu.get();
+		if ( itemId ) {
+			const inv = Inventory.findOne({ _id: itemId },{ fields: { amount: 1 } });
+			let amount = document.getElementById("choiceQuantity").value;
+			amount = ( amount && amount > 0 ? amount : 1 );
+			if ( amount <= inv.amount ) {
+				Meteor.call(t.showQuantity.get(), itemId, amount);
+				t.showQuantity.set(false);
+				t.showMenu.set(false);
+			};
+		};
+	},
+	'click .storage'(e,t) {
+		t.showMenu.set(false);
+		t.showQuantity.set(false);
+	},
+	'keyup input'(e,t) {
+		if ( e.currentTarget.value <= 0 )
+		e.currentTarget.value = 1;
+	},
+	'click input'(e,t) {
+		e.currentTarget.value = "";
+		e.currentTarget.focus();
 	}
 });
 
 Template.storage.helpers({
+	showQuantity(){
+		if ( Template.instance().showQuantity.get() )
+		return true;
+	},
+	hidden(){
+		if ( Template.instance().showMenu.get() )
+		return "hidden";
+	},
+	chosen(){
+		const itemId = Template.instance().showMenu.get();
+		if ( itemId ) {
+			const inv = Inventory.findOne({ _id: itemId });
+			const image =  "<div class='image'><img src='/assets/inv/"+inv.item.name.single.replace(/\s+/g, '-').toLowerCase()+".png'/></div>";
+			const name =  "<div class='name'>"+inv.item.name.plural+"</div>";
+			const amount = ( inv.amount ? "<div class='info amount'>x"+numeral(inv.amount).format('0,0.[00]a')+"</div>" : "" );
+			const energy = ( inv.item.energy ? "<div class='info energy'>+"+inv.item.energy+"<span class='mdi mdi-flash'></span></div>" : "" );
+			return image+"<div class='infos'>"+amount+energy+"</div>"+name;
+		};
+	},
+	showMenu(){
+		if ( Template.instance().showMenu.get() )
+		return true;
+	},
+	menu(){
+		const itemId = Template.instance().showMenu.get();
+		if ( itemId ) {
+			const inv = Inventory.findOne({ _id: itemId });
+			let menu = [{ text: "Take", call: "takeInv" }];
+			if ( inv.item.type == "Food" )
+			menu.push({ text: "Eat", call: "eatFood" });
+			return menu;
+		};
+	},
+	choice(){
+		return "<div class='choice "+this.call+"'>"+this.text+"</div>";
+	},
 	filter_back(){
 		if ( Template.instance().storageMenu.get() == "filter" )
 		return "selected";
@@ -473,11 +613,14 @@ Template.storage.helpers({
 	inventory(){
 		visitingCityDep.depend();
 		let filters = Template.instance().storageFilter.get();
-		let sorts = Template.instance().storageSort.get();
+		const sorts = Template.instance().storageSort.get();
 		if ( filters.length == 0 )
 		filters = [{}];
 		if ( visitingCity )
-		return Inventory.find({ "$and": [{ city: visitingCity },{ "$or": filters }] },{ sort: sorts });
+		return Inventory.find({ "$and": [
+			{ city: visitingCity },
+			{ "$or": filters }
+		] },{ sort: sorts });
 	}
 });
 
@@ -497,8 +640,8 @@ Template.leaderboard.helpers({
 			{ sort:
 				{ amount: -1 },
 			limit: 20
-			}).map(function(leader, index){
-				leader.rank = (skip)+index-(-1);
+		}).map(function(leader, index){
+			leader.rank = (skip)+index-(-1);
 			return leader;
 		});
 	}
@@ -606,6 +749,18 @@ Template.item.helpers({
 });
 
 Template.task.helpers({
+	selected(){
+		if ( this.selected )
+		return "selected";
+	},
+	accent(){
+		const selected = ( this.selected ? "<span class='mdi mdi-minus'></span>" : "<span class='mdi mdi-plus'></span>" );
+		return selected;
+	},
+	showHeading(){
+		if ( this.heading )
+		return true;
+	},
 	name(){
 		return this.items[0];
 	},
@@ -614,8 +769,13 @@ Template.task.helpers({
 		return "<div class='needed flex'>"+this.skill+" +"+this.exp+"</div>";
 	},
 	next(){
-		if ( this.next )
-		return "next";
+		if ( this.next && this.show ) {
+			return "next show";
+		} else if ( this.next ) {
+			return "next";
+		} else if ( this.show ) {
+			return "show";
+		};
 	},
 	item(){
 		let img = this.items[0].replace(/\s+/g, '-').toLowerCase();
@@ -731,8 +891,19 @@ Template.employee.events({
 });
 
 Template.employee.helpers({
+	name() {
+		if ( !this.name ) {
+			const player = Player.findOne({},{ fields: { username: 1 } });
+			if ( player && player.username )
+			return player.username;
+		} else {
+			return this.name;
+		};
+	},
 	avatar() {
-		const avatar = ( !this.avatar ? "walking-1" : "workers/person-"+this.avatar );
+		const player = Player.findOne({},{ fields: { avatar: 1 } });
+		const pic = ( player && player.avatar ? player.avatar : 1 );
+		const avatar = ( !this.avatar ? "players/avatar-"+pic : "workers/person-"+this.avatar );
 		return "<img class='avatar round-lg' src='/assets/"+avatar+".png'/>"
 	}
 });

@@ -122,7 +122,11 @@
 </template>
 
 <template name='task'>
+  {{#if showHeading}}
+  <div class="heading {{selected}}">{{{accent}}}<span>{{heading}}</span></div>
+  {{else}}
   <div class="task noselect {{next}}"><div class="rim round-sm"><div class="name"><div class="inside flex">{{name}}</div></div>{{{needed}}}{{{item}}}</div></div>
+  {{/if}}
 </template>
 
 <template name='skill'>
@@ -220,9 +224,30 @@
   </div>
 </template>
 
+<template name='player'>
+  <div class="player">
+    <div class="inside round-sm">
+      <div class="name">{{username}}</div>
+      <div class="image select_avatar">
+        <img class="round-lg" src="/assets/players/avatar-{{avatar}}.png" />
+      </div><div class="data">
+        <div class="inner">
+          <span class='mdi mdi-flash'></span><div class="energy">{{{energy}}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <template name='town'>
   <div id='overlay' class='map flex'>
       <div class='box slim'>
+        {{#if showAvatars}}
+        <div class="avatars round-sm noselect">
+          {{#each avatars}}{{{image}}}{{/each}}
+        </div>
+        {{/if}}
+        {{> player}}
         <div class="background"></div>
         <div class="crafting">
           {{> storage}}
@@ -278,7 +303,20 @@
     <div class="buttons">
       <span class="mdi round-sm mdi-filter-variant filter_items {{filter_back}}"></span><span class="mdi round-sm mdi-sort-variant sort_items {{sort_back}}"></span>
     </div>
-    <div class="container slim">
+    <div class="container slim {{hidden}}">
+    {{#if showMenu}}
+      <div class="choices flex">
+        <div class="inner">
+          {{{chosen}}}
+          {{#if showQuantity}}
+            <input id="choiceQuantity" value="1" type="text"/>
+            <div class="choose">Select</div>
+          {{else}}
+            {{#each menu}}{{{choice}}}{{/each}}
+          {{/if}}
+        </div>
+      </div>
+    {{/if}}
     {{#each inventory}}{{> item}}{{/each}}
     </div>
   </div>

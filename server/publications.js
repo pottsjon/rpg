@@ -22,6 +22,29 @@ Meteor.publish("tasks", function () {
 	return Tasks.find({});
 });
 
+Meteor.publish("player", function () {
+	let pub = this,
+	playersPub = [],
+	foundPub = Meteor.users.find({ _id: this.userId },{ fields: { avatar: 1, username: 1, energy: 1, maxEnergy: 1 } });
+	if ( this.userId ) {
+		playersPub = foundPub.observeChanges({
+			added: function(oId, oFields) {
+				pub.added('player', oId, oFields);
+			},
+			changed: function(oId, oFields) {
+				pub.changed('player', oId, oFields);
+			},
+			removed: function(oId) {
+				pub.removed('player', oId);
+			}
+		});
+		pub.ready();
+		pub.onStop(function () {
+			playersPub.stop();
+		});
+	};
+});
+
 Meteor.publish("queues", function () {
 	let pub = this,
 	queuesPub = [],

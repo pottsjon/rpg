@@ -1,4 +1,21 @@
 Meteor.methods({
+	'eatFood': function(itemId, amount) {
+		if ( Meteor.isServer ) {
+			const inv = Inventory.findOne({ _id: itemId },{ fields: { amount: 1, item: 1 } });
+			const item = Items.findOne({ 'name.single': inv.item },{ fields: { energy: 1 } });
+			const user = Meteor.users.findOne({ _id: this.userId },{ fields: { energy: 1, maxEnergy: 1 } });
+			const leftover = user.maxEnergy-user.energy;
+			amount = ( item.energy*amount >= leftover ? Math.ceil(leftover/item.energy) : amount );
+			if ( amount > 0 && inv && inv.amount && inv.amount >= amount && item && item.energy ) {
+				Inventory.update({ _id: itemId },{ $inc: { amount: -amount } });
+				Meteor.users.update({ _id: this.userId },{ $inc: { energy: item.energy*amount } });
+			};
+		};
+	},
+	'chooseAvatar': function(number) {
+		if ( Meteor.isServer )
+		Meteor.users.update({ _id: this.userId },{ $set: { avatar: number } });
+	},
 	'visitNext': function(visit) {
 		let position = Positions.findOne({ owner: this.userId });
 		const update = ( visit ? { $set: { visit: true } } : { $unset: { visit: "" } } );

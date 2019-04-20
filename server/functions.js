@@ -628,7 +628,8 @@ checkItems = function () {
             rarity: 'Common',
             name: { single: "Potato" , plural: "Potatoes" },
             roll: 0,
-            level: 1
+            level: 1,
+            energy: 2
         },
         {
             skill: "Farming",
@@ -636,7 +637,8 @@ checkItems = function () {
             rarity: 'Common',
             name: { single: "Apple" , plural: "Apples" },
             roll: 0,
-            level: 2
+            level: 2,
+            energy: 5
         },
         {
             skill: "Farming",
@@ -644,7 +646,8 @@ checkItems = function () {
             rarity: 'Common',
             name: { single: "Orange" , plural: "Oranges" },
             roll: 0,
-            level: 3
+            level: 3,
+            energy: 12
         },
         {
             skill: "Mining",

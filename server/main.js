@@ -8,7 +8,10 @@ import './functions.js';
 import collide from 'line-circle-collision';
 
 Accounts.onCreateUser(function(options, user) {
-	startingCity(user._id)
+	startingCity(user._id);
+	user.avatar = Math.floor(Math.random()*60+1);
+	user.energy = 0;
+	user.maxEnergy = 100;
 	return user;
 });
 
