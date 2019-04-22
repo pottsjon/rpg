@@ -190,11 +190,53 @@ var queueInt = [];
 var queueTimeout = [];
 startQueue = function (queue) {
     try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
-    queueInt[queue.owner+queue.worker] = Meteor.setInterval(function() {
+    queueInt[queue.owner+queue.worker] = Meteor.setInterval(function() { 
         queue = queueSkill(queue);
         queue = queueRoll(queue);
-        awardQueue(queue)
+        awardQueue(queue);
     }, 1000*queue.length);
+};
+
+feedQueue = function (queue) {
+    let reqs = true;
+    let energy = Meteor.users.findOne({ "$and": [
+        { _id: queue.owner },
+        { energy: { $gte: queue.task.energy } }
+    ] },{ fields: { _id: 1 } });
+    if ( queue.task.requires )
+    queue.task.requires.forEach((req) => {
+        let inv = Inventory.findOne({ "$and": [
+            { city: queue.city },
+            { item: req.name },
+            { amount: { $gte: req.amount } }
+        ] },{ fields: { _id: 1 } });
+        if ( inv ) {
+            reqs = true;
+        } else {
+            reqs = false;
+        };
+    });
+    if ( energy && reqs ) {
+        Meteor.users.update({ "$and": [
+            { _id: queue.owner },
+            { energy: { $gte: queue.task.energy } }
+        ] },{ $inc: { energy: -queue.task.energy } },
+        function(err, count) {
+        });
+        if ( queue.task.requires )   
+        queue.task.requires.forEach((req) => {
+            Inventory.update({ "$and": [
+                { city: queue.city },
+                { item: req.name },
+                { amount: { $gte: req.amount } }
+            ] },{ $inc: { amount: -req.amount } },
+            function(err, count) {
+            });
+        });
+        return true;
+    } else {
+        return false;
+    };
 };
 
 queueSkill = function (queue) {
@@ -237,9 +279,7 @@ initQueue = function (queue) {
     try { Meteor.clearInterval(queueInt[queue.owner+queue.worker]) } catch (e) { };
     try { Meteor.clearTimeout(queueTimeout[queue.owner+queue.worker]) } catch (e) { };
     let queue_awards = [];
-	const task = Tasks.findOne({ _id: queue.taskId },{ fields: { exp: 0 } });
-    queue.task = task;
-    task.items.forEach((item) => {
+    queue.task.items.forEach((item) => {
         let item_data = Items.findOne({ 'name.single': item },{ fields: { name: 1, roll: 1 } });
         queue_awards.push(item_data);
     });
@@ -247,13 +287,13 @@ initQueue = function (queue) {
     queue = queueSkill(queue);
     const time_lapsed = (new Date()).getTime()-queue.started;
     const queue_length = queue.length*1000;
-    const elapsed_count = Math.floor(time_lapsed/queue_length);
+    const elapsed_count = Math.floor(time_lapsed/queue_length)
     if ( elapsed_count >= 1 ) {
         const timeout_length = queue_length-(time_lapsed-(queue_length*elapsed_count));
         queueTimeout[queue.owner+queue.worker] = Meteor.setTimeout(function() {
             queue = queueRoll(queue);
             awardQueue(queue);
-            initQueue(queue);
+            startQueue(queue);
         }, timeout_length);
     } else {
         startQueue(queue);
@@ -330,6 +370,9 @@ awardQueue = function (queue) {
     },{ upsert: true },
     function(err, count) {
     });
+    const reqs = ( queue.task.energy || queue.task.requires ? feedQueue(queue) : true );
+    if ( !reqs )
+    clearQueue(queue.owner, queue.worker);
 };
 
 awardQueues = function () {
@@ -379,11 +422,12 @@ clearQueue = function (userId,workerId) {
     });
 
     find_queues.forEach((queue) => {
-        Stalls.update({" $and": [
+        Stalls.update({ "$and": [
+            { owner: queue.owner },
             { number: queue.stall },
             { city: queue.city }
         ] },
-        { $unset: { worker: "", taskId: "" } },
+        { $unset: { taskId: "" } },
         function(err, count) {
         });
         Workers.update({ _id: queue.worker },
@@ -468,30 +512,6 @@ checkCities = function () {
 			Cities.insert(city);
         });
     };
-    /*
-    // used during city creation process to determine if any cities were touching with a little extra bias
-    const find_cities = Cities.find({});
-    let found_cities = [];
-    find_cities.forEach((city) => {
-        let cities = Cities.findOne({ "$and": [
-            { name: { $ne: city.name } },
-            { "$and": [
-                { "$and": [
-                    { x: { $gte: city.x-(city.radius*2) } },
-                    { x: { $lte: city.x+(city.radius*2) } },
-                ] },
-                { "$and": [
-                    { y: { $gte: city.y-(city.radius*2) } },
-                    { y: { $lte: city.y+(city.radius*2) } }
-                ] },
-            ] },
-        ] });
-        if ( cities )
-        found_cities.push(city);
-    });
-    console.log(found_cities)
-    console.log(found_cities.length)
-    */
 };
 
 checkTasks = function () {
@@ -499,31 +519,51 @@ checkTasks = function () {
         {
             type: "Resource",
             skill: "Farming",
-            task: "Farm Potato",
+            task: "Farm Strawberry",
             exp: 0,
-            items: ["Potato"]
-        },
-        {
-            type: "Resource",
-            skill: "Farming",
-            task: "Farm Apple",
-            exp: 2000,
-            items: ["Apple"]
+            items: ["Strawberry"]
         },
         {
             type: "Resource",
             skill: "Farming",
             task: "Farm Orange",
-            exp: 4000,
+            exp: 2000,
             items: ["Orange"]
+        },
+        {
+            type: "Resource",
+            skill: "Farming",
+            task: "Farm Apple",
+            exp: 4000,
+            items: ["Apple"]
+        },
+        {
+            type: "Resource",
+            skill: "Farming",
+            task: "Farm Banana",
+            exp: 8000,
+            items: ["Banana"]
+        },
+        {
+            type: "Resource",
+            skill: "Farming",
+            task: "Farm Plum",
+            exp: 16000,
+            items: ["Plum"]
+        },
+        {
+            type: "Resource",
+            skill: "Farming",
+            task: "Farm Peach",
+            exp: 32000,
+            items: ["Peach"]
         },
         {
             type: "Resource",
             skill: "Mining",
             task: "Mine Bronze",
             exp: 0,
-            degrade: 2000,
-            limit: 5000,
+            energy: 5,
             items: ["Bronze Ore", "Yellow Gem"]
         },
         {
@@ -531,6 +571,7 @@ checkTasks = function () {
             skill: "Mining",
             task: "Mine Copper",
             exp: 2000,
+            energy: 10,
             items: ["Copper Ore", "Yellow Gem", "Green Gem"]
         },
         {
@@ -538,6 +579,7 @@ checkTasks = function () {
             skill: "Mining",
             task: "Mine Silver",
             exp: 5000,
+            energy: 15,
             items: ["Silver Ore", "Yellow Gem", "Green Gem"]
         },
         {
@@ -545,6 +587,7 @@ checkTasks = function () {
             skill: "Mining",
             task: "Mine Gold",
             exp: 10000,
+            energy: 20,
             items: ["Gold Ore", "Yellow Gem", "Green Gem", "Blue Gem"]
         },
         {
@@ -552,6 +595,7 @@ checkTasks = function () {
             skill: "Mining",
             task: "Mine Iron",
             exp: 20000,
+            energy: 25,
             items: ["Iron Ore", "Yellow Gem", "Green Gem", "Blue Gem"]
         },
         {
@@ -559,6 +603,7 @@ checkTasks = function () {
             skill: "Mining",
             task: "Mine Titanium",
             exp: 40000,
+            energy: 30,
             items: ["Titanium Ore", "Yellow Gem", "Green Gem", "Blue Gem", "Red Gem"]
         },
         {
@@ -566,53 +611,93 @@ checkTasks = function () {
             skill: "Logging",
             task: "Chop Maple",
             exp: 0,
+            energy: 5,
             items: ["Maple Log"]
         },
         {
             type: "Resource",
             skill: "Logging",
             task: "Chop Ash",
-            exp: 100,
+            exp: 2000,
+            energy: 10,
             items: ["Ash Log"]
         },
         {
             type: "Resource",
             skill: "Logging",
             task: "Chop Elm",
-            exp: 1000,
+            exp: 4000,
+            energy: 15,
             items: ["Elm Log"]
         },
         {
-            type: "Product",
-            skill: "Blacksmithing",
-            task: "Smelt Copper",
-            exp: 0,
-            items: ["Copper Bar"],
-            requires: ["Copper Ore"]
+            type: "Resource",
+            skill: "Logging",
+            task: "Chop Cedar",
+            exp: 8000,
+            energy: 20,
+            items: ["Cedar Log"]
         },
         {
-            type: "Product",
+            type: "Resource",
+            skill: "Logging",
+            task: "Chop Fir",
+            exp: 16000,
+            energy: 25,
+            items: ["Fir Log"]
+        },
+        {
+            type: "Resource",
+            skill: "Logging",
+            task: "Chop Pine",
+            exp: 32000,
+            energy: 30,
+            items: ["Pine Log"]
+        },
+        {
+            type: "Material",
             skill: "Blacksmithing",
             task: "Smelt Bronze",
-            exp: 100,
+            exp: 0,
+            energy: 5,
             items: ["Bronze Bar"],
-            requires: ["Bronze Ore"]
+            requires: [{ name: "Bronze Ore", amount: 5 }]
         },
         {
-            type: "Product",
+            type: "Material",
+            skill: "Blacksmithing",
+            task: "Smelt Copper",
+            exp: 100,
+            energy: 10,
+            items: ["Copper Bar"],
+            requires: [{ name: "Copper Ore", amount: 5 }]
+        },
+        {
+            type: "Material",
             skill: "Woodworking",
             task: "Process Maple",
             exp: 0,
+            energy: 5,
             items: ["Maple Wood"],
-            requires: ["Maple Log"]
+            requires: [{ name: "Maple Log", amount: 5 }]
         },
         {
-            type: "Product",
+            type: "Material",
             skill: "Woodworking",
             task: "Process Ash",
             exp: 100,
+            energy: 10,
             items: ["Ash Wood"],
-            requires: ["Ash Log"]
+            requires: [{ name: "Ash Log", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Woodworking",
+            task: "Process Elm",
+            exp: 200,
+            energy: 15,
+            items: ["Elm Wood"],
+            requires: [{ name: "Elm Log", amount: 5 }]
         }
     ];
     data.forEach((job) => {
@@ -626,7 +711,7 @@ checkItems = function () {
             skill: "Farming",
             type: "Food",
             rarity: 'Common',
-            name: { single: "Potato" , plural: "Potatoes" },
+            name: { single: "Strawberry" , plural: "Strawberries" },
             roll: 0,
             level: 1,
             energy: 2
@@ -635,7 +720,7 @@ checkItems = function () {
             skill: "Farming",
             type: "Food",
             rarity: 'Common',
-            name: { single: "Apple" , plural: "Apples" },
+            name: { single: "Orange" , plural: "Oranges" },
             roll: 0,
             level: 2,
             energy: 5
@@ -644,10 +729,37 @@ checkItems = function () {
             skill: "Farming",
             type: "Food",
             rarity: 'Common',
-            name: { single: "Orange" , plural: "Oranges" },
+            name: { single: "Apple" , plural: "Apples" },
             roll: 0,
             level: 3,
+            energy: 8
+        },
+        {
+            skill: "Farming",
+            type: "Food",
+            rarity: 'Common',
+            name: { single: "Banana" , plural: "Bananas" },
+            roll: 0,
+            level: 4,
             energy: 12
+        },
+        {
+            skill: "Farming",
+            type: "Food",
+            rarity: 'Common',
+            name: { single: "Plum" , plural: "Plums" },
+            roll: 0,
+            level: 5,
+            energy: 18
+        },
+        {
+            skill: "Farming",
+            type: "Food",
+            rarity: 'Common',
+            name: { single: "Peach" , plural: "Peaches" },
+            roll: 0,
+            level: 6,
+            energy: 27
         },
         {
             skill: "Mining",

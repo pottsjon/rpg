@@ -150,9 +150,9 @@ Meteor.publish("workers", function () {
 Meteor.publish("inventory", function (city) {
 	let pub = this,
 	inventoryPub = [];
-	let inv_lookup = [{ "$and": [{ city: { $exists:  false } },{ owner: this.userId }] }];
+	let inv_lookup = [{ "$and": [{ city: { $exists:  false } },{ owner: this.userId },{ amount: { $gt: 0 } }] }];
 	if ( city )
-	inv_lookup.push({ "$and": [{ city: city },{ owner: this.userId }] });
+	inv_lookup.push({ "$and": [{ city: city },{ owner: this.userId },{ amount: { $gt: 0 } }] });
     let foundPub = Inventory.find({ "$or": inv_lookup });
 	if ( this.userId ) {
 		inventoryPub = foundPub.observeChanges({

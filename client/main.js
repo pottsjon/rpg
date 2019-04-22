@@ -187,8 +187,10 @@ Template.stall.helpers({
 
 Template.town.onCreated(function () {
 	this.taskSelect = new ReactiveVar( false );
+	this.taskInfo = new ReactiveVar( false );
 	this.stallSelect = new ReactiveVar( false );
 	this.showAvatars = new ReactiveVar( false );
+	this.showWorkers = new ReactiveVar( false );
 	Tracker.autorun(function() {
 		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
 		if ( visiting && visiting.city.name ) {
@@ -211,8 +213,11 @@ Template.town.onCreated(function () {
 });
 
 Template.town.events({
+	'click .show_workers'(e,t) {
+		t.showWorkers.set(true);		
+	},
 	'click .heading'(e,t) {
-		t.taskSelect.set( this.heading );
+		t.taskSelect.set(this.heading);
 	},
 	'click .select_avatar'(e,t) {
 		e.stopPropagation();
@@ -226,13 +231,27 @@ Template.town.events({
 	'click .box'(e,t) {
 		t.showAvatars.set(false);
 	},
+	'click .task .inner'(e, t) {
+		e.stopPropagation();
+	},
+	'click .task .container'(e, t) {
+		e.stopPropagation();
+		t.taskInfo.set(false);
+	},
+	'click .start_task'(e, t) {
+		if ( !this.waiting && !this.waitings ) {
+			const stall = t.stallSelect.get();
+			const user_skill = Skills.findOne({ "$and": [{ owner: this.worker },{ name: this.skill }] },{ fields: { amount: 1 } });
+			const skill_amount = ( !user_skill || !user_skill.amount ? 0 : user_skill.amount );
+			if ( skill_amount >= this.exp ) {
+				Meteor.call('startTask', stall._id, this.worker, this._id);
+				t.stallSelect.set(false);
+				t.taskInfo.set(false);
+			};
+		};
+	},
 	'click .task'(e, t) {
-		const stall = t.stallSelect.get();
-		const user_skill = Skills.findOne({ "$and": [{ owner: this.worker },{ name: this.skill }] },{ fields: { amount: 1 } });
-		const skill_amount = ( !user_skill || !user_skill.amount ? 0 : user_skill.amount );
-		if ( skill_amount >= this.exp )
-		Meteor.call('startTask', stall._id, this.worker, this._id);
-		t.stallSelect.set(false);
+		t.taskInfo.set(this._id);
 	},
 	'click .close_menu'(e, t) {
 		t.stallSelect.set(false);
@@ -291,15 +310,34 @@ Template.town.helpers({
 		return true;
 	},
 	tasks(){
+		visitingCityDep.depend();
 		let selected = Template.instance().stallSelect.get();
 		let taskSelect = Template.instance().taskSelect.get();
+		let taskInfo = Template.instance().taskInfo.get();
 		let stall = Stalls.findOne({ number: selected._id },{ fields: { worker: 1 } });
-		if ( stall.worker ) {
+		if ( selected && selected.tasks && stall.worker ) {
 			let worker = stall.worker, available_tasks = [], task_skills = [], skills = {}, nexts = {}, tasks = Tasks.find({},{ sort: { type: -1, skill: 1, exp: 1 } }).fetch();
+			const player = Player.findOne({},{ fields: { energy: 1 } });
 			skills["Farming"] = Skills.findOne({ "$and": [{ name: "Farming" },{ owner: worker }] },{ fields: { amount: 1 } });
 			skills["Mining"] = Skills.findOne({ "$and": [{ name: "Mining" },{ owner: worker }] },{ fields: { amount: 1 } });
 			skills["Logging"] = Skills.findOne({ "$and": [{ name: "Logging" },{ owner: worker }] },{ fields: { amount: 1 } });
 			tasks.forEach((task) => {
+				if ( taskInfo == task._id )
+				task.info = true;
+				if ( task.requires ) {
+					task.requires.forEach((req) => {
+						const inv = Inventory.findOne({ "$and": [
+							{ city: visitingCity },
+							{ 'item.name.single': req.name },
+							{ amount: { $gte: req.amount } }
+						] });
+						if ( !inv ) {
+							if ( !task.waitings )
+							task.waitings = [];
+							task.waitings.push(req);
+						};
+					});
+				};
 				if ( ( taskSelect && taskSelect == task.skill ) || ( !taskSelect && task.skill == "Farming" ) )
 					task.show = true;
 				if ( !task_skills[task.skill] ) {
@@ -309,7 +347,12 @@ Template.town.helpers({
 				};
 				task.worker = worker;
 				if ( task.exp == 0 || ( skills[task.skill] && skills[task.skill].amount && skills[task.skill].amount >= task.exp ) ) {
-					available_tasks.push(task);
+					if ( task.energy && player.energy < task.energy ) {
+						task.waiting = true;
+						available_tasks.push(task);
+					} else {
+						available_tasks.push(task);
+					};
 				} else if ( !nexts[task.skill] ) {
 					nexts[task.skill] = true;
 					task.next = true;
@@ -748,7 +791,39 @@ Template.item.helpers({
 	}
 });
 
+Template.req.onCreated(function () {
+	this.showBubble = new ReactiveVar( false );
+});
+
+Template.req.events({
+	'click .req'(e,t) {
+		t.showBubble.set(true);
+		Meteor.setTimeout(function() {
+			t.showBubble.set(false);
+		}, 1000);
+	}
+});
+
+Template.req.helpers({
+	req(){
+		const img = this.name.replace(/\s+/g, '-').toLowerCase();
+		const bubble = ( Template.instance().showBubble.get() ? "<div class='bubble'><span class='round-sm'>"+this.name+"</span></div>" : "" );
+		return "<div class='req'>"+bubble+"<img class='mat' src='/assets/inv/"+img+".png'/><span>"+this.amount+"</span></div>";
+	}
+});
+
 Template.task.helpers({
+	energy(){
+		if ( this.energy )
+		return "<div class='energy'><span class='mdi mdi-flash'></span>"+this.energy+"</div>"
+	},
+	waitings(){
+		if ( this.waiting || this.waitings )
+		return "waiting";
+	},
+	showMore(){
+		return this.info;
+	},
 	selected(){
 		if ( this.selected )
 		return "selected";
@@ -762,14 +837,18 @@ Template.task.helpers({
 		return true;
 	},
 	name(){
-		return this.items[0];
+		return this.task;
 	},
 	needed(){
 		if ( this.next )
 		return "<div class='needed flex'>"+this.skill+" +"+this.exp+"</div>";
 	},
 	next(){
-		if ( this.next && this.show ) {
+		if ( this.waiting && this.show ) {
+			return "waiting show";
+		} else if ( this.waiting ) {
+			return "waiting";
+		} else if ( this.next && this.show ) {
 			return "next show";
 		} else if ( this.next ) {
 			return "next";
@@ -781,43 +860,6 @@ Template.task.helpers({
 		let img = this.items[0].replace(/\s+/g, '-').toLowerCase();
 		let task_img = this.skill.replace(/\s+/g, '-').toLowerCase();
 		return "<img class='image' src='/assets/inv/"+img+".png'/><img class='icon' src='/assets/icons/"+task_img+".png'/>";
-	}
-});
-
-Template.gathering.events({
-	'click .task'() {
-		const user_skill = Skills.findOne({ "$and": [{ owner: Meteor.userId() },{ name: this.skill }] },{ fields: { amount: 1 } });
-		const skill_amount = ( !user_skill || !user_skill.amount ? 0 : user_skill.amount );
-		if ( skill_amount >= this.exp )
-		Meteor.call('startTask',this._id);
-	}
-});
-
-Template.gathering.helpers({
-	logs(){
-		return sysMsgs.find({},{ sort: { updatedAt: -1 }, limit: 200 });
-	},
-	tasks(){
-		let available_tasks = [], skills = {}, nexts = {}, tasks = Tasks.find({ type: "Resource" }).fetch();
-		skills["Farming"] = Skills.findOne({ "$and": [{ name: "Farming" },{ owner: Meteor.userId() }] },{ fields: { amount: 1 } });
-		skills["Mining"] = Skills.findOne({ "$and": [{ name: "Mining" },{ owner: Meteor.userId() }] },{ fields: { amount: 1 } });
-		skills["Logging"] = Skills.findOne({ "$and": [{ name: "Logging" },{ owner: Meteor.userId() }] },{ fields: { amount: 1 } });
-		tasks.forEach((task) => {
-			if ( task.exp == 0 || ( skills[task.skill] && skills[task.skill].amount && skills[task.skill].amount >= task.exp ) ) {
-			available_tasks.push(task);
-			} else if ( !nexts[task.skill] ) {
-				nexts[task.skill] = true;
-				task.next = true;
-				available_tasks.push(task);
-			};
-		});
-		return available_tasks;
-	}
-});
-
-Template.production.helpers({
-	tasks(){
-		return Tasks.find({ type: "Product" });
 	}
 });
 

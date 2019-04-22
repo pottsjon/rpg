@@ -83,22 +83,6 @@
   </div>
 </template>
 
-<template name='skill-backup'>
-  {{#if showTitle}}
-    <div class="skill title">{{title}}</div>
-  {{else}}
-    <div class="skill">
-      <span class="name">{{name}}</span><span class="amount">{{toNumbers amount}} ({{level}})</span>
-    </div>
-  {{/if}}
-</template>
-
-<template name='item-backup'>
-  <div class="item {{toLowerCase item.rarity}}">  
-      <span class="name">{{item.name.plural}}</span><span class="amount">{{toNumbers amount}}</span>
-  </div>
-</template>
-
 <template name='item'>
   <div class="item noselect {{toLowerCase item.rarity}}">
     <div class="image round-lt"><div class="name select"><div class="inside flex">{{item.name.plural}}</div></div>{{{img}}}<div class='amount select'>{{toNumbers amount}}</div></div>
@@ -115,17 +99,37 @@
   </div>
 </template>
 
-<template name='task-backup'>
-  <div class="task noselect">
-    <span class="name">{{task}}</span><span class="amount">Exp Req: {{toNumbers exp}}</span>
-  </div>
+<template name='req'>
+{{{req}}}
 </template>
 
 <template name='task'>
   {{#if showHeading}}
-  <div class="heading {{selected}}">{{{accent}}}<span>{{heading}}</span></div>
+    <div class="heading {{selected}}">{{{accent}}}<span>{{heading}}</span></div>
   {{else}}
-  <div class="task noselect {{next}}"><div class="rim round-sm"><div class="name"><div class="inside flex">{{name}}</div></div>{{{needed}}}{{{item}}}</div></div>
+    {{#if showMore}}
+      <div class="task noselect more {{waitings}}">
+        <div class="container flex">
+          <div class="inner">
+            <div class="view">{{{item}}}</div>
+            <div class="name-alt">{{name}}</div>
+            {{{energy}}}
+            {{#each requires}}{{> req}}{{/each}}
+            <div class="button start_task">Start</div>
+          </div>
+        </div>
+      </div>
+    {{else}}
+      <div class="task noselect {{next}}">
+        <div class="rim round-sm">
+          <div class="name">
+            <div class="inside flex">{{name}}</div>
+          </div>
+          {{{needed}}}
+          {{{item}}}
+        </div>
+      </div>
+    {{/if}}
   {{/if}}
 </template>
 
@@ -175,22 +179,6 @@
   </div>
 </template>
 
-<template name='employee-backup'>
-  <div class="worker employee">
-      <div class="inside round-sm">
-      {{{avatar}}}
-      <div class="data">
-        <div class="name round-sm">{{name}}</div>
-      </div>
-    </div>
-  </div>
-  {{#each skills}}{{> skill}}{{/each}}
-  {{#each queues}}{{> queue}}{{/each}}
-  {{#if menu}}
-    {{#each tasks}}{{> task}}{{/each}}
-  {{/if}}
-</template>
-
 <template name='hiring'>
   <div class='hiring'>
     <div class="headline">Employees</div>
@@ -202,14 +190,6 @@
       {{#each prospects}}{{> worker}}{{/each}}
     </div>
   </div>
-</template>
-
-<template name='production'>
-  {{#each tasks}}{{> task}}{{/each}}
-</template>
-
-<template name='gathering'>
-  {{#each tasks}}{{> task}}{{/each}}
 </template>
 
 <template name='stall'>
@@ -272,6 +252,9 @@
             {{else}}
               <div class="header">
                 <div class="headline flex"><span class="text">{{city}} Work Stalls</span></div>
+                <div class="buttons">
+                  <span class="mdi round-sm mdi-account-supervisor show_workers"></span>
+                </div>
               </div>
               {{#each stalls}}{{> stall}}{{/each}}
             {{/if}}

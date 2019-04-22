@@ -5,10 +5,11 @@ Meteor.methods({
 			const item = Items.findOne({ 'name.single': inv.item },{ fields: { energy: 1 } });
 			const user = Meteor.users.findOne({ _id: this.userId },{ fields: { energy: 1, maxEnergy: 1 } });
 			const leftover = user.maxEnergy-user.energy;
-			amount = ( item.energy*amount >= leftover ? Math.ceil(leftover/item.energy) : amount );
-			if ( amount > 0 && inv && inv.amount && inv.amount >= amount && item && item.energy ) {
-				Inventory.update({ _id: itemId },{ $inc: { amount: -amount } });
-				Meteor.users.update({ _id: this.userId },{ $inc: { energy: item.energy*amount } });
+			const update = ( item.energy*amount >= leftover ? Math.ceil(leftover/item.energy) : amount );
+			const total = ( item.energy*amount >= leftover ? leftover : item.energy*amount );
+			if ( update > 0 && inv && inv.amount && inv.amount >= update && item && item.energy ) {
+				Inventory.update({ _id: itemId },{ $inc: { amount: -update } });
+				Meteor.users.update({ _id: this.userId },{ $inc: { energy: total } });
 			};
 		};
 	},
@@ -129,80 +130,47 @@ Meteor.methods({
 		};
 	},
 	'startTask': function(stallId, workerId, taskId) {
-		const time_now = (new Date()).getTime();
-		const userId = ( Meteor.isServer ? this.userId : Meteor.userId() );
-		const find_worker = ( workerId == userId ? true : Workers.findOne({ "$and": [{ _id: workerId },{ owner: userId }] },{ fields: { _id: 1 } }) );
-		const find_pos = Positions.findOne({ "$and": [{ 'city.visiting': true },{ owner: userId }] },{ fields: { 'city.name': 1 } });
-		if ( find_worker && find_pos && find_pos.city.name ) {
-			Stalls.update({ "$and": [
-				{ city: find_pos.city.name },
-				{ number: stallId },
-				{ owner: userId }
-			] },{ $set: { taskId: taskId } },
-			function(err, count) {
-			});
-			if ( Meteor.isServer ) {
-				let queue = {
-					taskId: taskId,
-					city: find_pos.city.name,
-					stall: stallId,
-					owner: this.userId,
-					worker: workerId,
-					created: time_now,
-					started: time_now,
-					length: 30
-				};
+		if ( Meteor.isServer ) {
+			const time_now = (new Date()).getTime();
+			const userId = ( Meteor.isServer ? this.userId : Meteor.userId() );
+			const find_worker = ( workerId == userId ? true : Workers.findOne({ "$and": [{ _id: workerId },{ owner: userId }] },{ fields: { _id: 1 } }) );
+			const find_pos = Positions.findOne({ "$and": [{ 'city.visiting': true },{ owner: userId }] },{ fields: { 'city.name': 1 } });
+			const task = Tasks.findOne({ _id: taskId },{ fields: { exp: 0 } });
+			let queue = {
+				taskId: taskId,
+				task: task,
+				city: find_pos.city.name,
+				stall: stallId,
+				owner: this.userId,
+				worker: workerId,
+				created: time_now,
+				started: time_now,
+				length: 30
+			};
+			const reqs = ( task.energy || task.requires ? feedQueue(queue) : true );
+			if ( find_worker && find_pos && find_pos.city.name && reqs ) {
+				Stalls.update({ "$and": [
+					{ city: find_pos.city.name },
+					{ number: stallId },
+					{ owner: userId }
+				] },{ $set: { taskId: taskId } },
+				function(err, count) {
+				});
 				Queues.update({"$and": [
 					{ owner: this.userId },
 					{ worker: workerId },
 					{ started: { $exists: true } },
 					{ completed: { $exists: false } }
-				]},{ $set: {
-					completed: time_now
-				} },function(err, count) {
+				]},{ $set: { completed: time_now } },
+				function(err, count) {
 					Queues.insert(queue);
 					initQueue(queue);
 					Workers.update({ _id: workerId },{
-						$set: {
-							working: time_now
-						}
+						$set: { working: time_now }
 					},function(err, count) {
 					});
 				});
 			};
-		};
-	},
-	'startTaskBak': function(taskId,workerId) {
-		if ( Meteor.isServer ) {
-			const location = ( workerId ? Workers.findOne({ _id: workerId },{ fields: { city: 1 } }) : Positions.findOne({ "$and": [{ 'city.visiting': true },{ owner: this.userId }]},{ fields: { 'city.name': 1 } }) );
-			const worker_id = ( workerId ? workerId : this.userId );
-			const time_now = (new Date()).getTime();
-			let queue = {
-				taskId: taskId,
-				owner: this.userId,
-				worker: worker_id,
-				created: time_now,
-				started: time_now,
-				length: 30
-			};
-			queue["city"] = ( workerId ? location.city : location.city.name );
-			Queues.update({"$and": [
-				{ owner: this.userId },
-				{ worker: worker_id },
-				{ started: { $exists: true } },
-				{ completed: { $exists: false } }
-			]},{ $set: {
-				completed: time_now
-			} },
-			function(err, count) {
-				Queues.insert(queue);
-				initQueue(queue);
-				Workers.update({ _id: worker_id },{
-					$set: {
-						working: time_now
-					}
-				});
-			});
 		};
 	}
 });
