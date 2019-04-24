@@ -190,7 +190,7 @@ Template.town.onCreated(function () {
 	this.taskInfo = new ReactiveVar( false );
 	this.stallSelect = new ReactiveVar( false );
 	this.showAvatars = new ReactiveVar( false );
-	this.showWorkers = new ReactiveVar( false );
+	this.showHiring = new ReactiveVar( false );
 	Tracker.autorun(function() {
 		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
 		if ( visiting && visiting.city.name ) {
@@ -213,8 +213,14 @@ Template.town.onCreated(function () {
 });
 
 Template.town.events({
-	'click .show_workers'(e,t) {
-		t.showWorkers.set(true);		
+	'click .prospects, click .employees, click .headline'(e,t) {
+		e.stopPropagation();
+	},
+	'click .hiring'(e,t) {
+		t.showHiring.set(false);
+	},
+	'click .show_hiring'(e,t) {
+		t.showHiring.set(true);		
 	},
 	'click .heading'(e,t) {
 		t.taskSelect.set(this.heading);
@@ -285,6 +291,9 @@ Template.town.helpers({
 			avatars.push({ image: i });
 		}
 		return avatars;
+	},
+	showHiring(){
+		return Template.instance().showHiring.get();
 	},
 	showAvatars(){
 		return Template.instance().showAvatars.get();
@@ -374,7 +383,7 @@ Template.town.helpers({
 			}).fetch();
 			employees.map(function(emp, index){
 				const workerId = emp._id
-				emp.skills = Skills.find({ "$and": [{ owner: workerId },{ level: { $gt: 1 } }] });
+				emp.skills = Skills.find({ owner: workerId });
 				emp.queues = Queues.find({ "$and": [
 					{ worker: { $ne: Meteor.userId() } },
 					{ worker: workerId },
@@ -531,6 +540,18 @@ Template.storage.events({
 			amount = ( amount && amount > 0 ? amount : 1 );
 			if ( amount <= inv.amount ) {
 				Meteor.call(t.showQuantity.get(), itemId, amount);
+				t.showQuantity.set(false);
+				t.showMenu.set(false);
+			};
+		};
+	},
+	'click .chooseMax'(e,t) {
+		e.stopPropagation();
+		const itemId = t.showMenu.get();
+		if ( itemId ) {
+			const inv = Inventory.findOne({ _id: itemId },{ fields: { amount: 1 } });
+			if ( inv && inv.amount ) {
+				Meteor.call(t.showQuantity.get(), itemId, inv.amount);
 				t.showQuantity.set(false);
 				t.showMenu.set(false);
 			};
@@ -761,13 +782,9 @@ Template.queue.onDestroyed(function () {
 });
 
 Template.skill.helpers({
-	amount(){
-		if ( this.amount )
-		return numeral(this.amount).format('0,0.[00]a');
-	},
-	level(){
-		const level = ( !this.boss ? this.level : "("+this.level+")" );
-		return level;
+	numbers(){
+		const amount = ( this.amount ? numeral(this.amount/itemLevel(this.amount,true).next).format('.00') : "" );
+		return this.level+amount;
 	},
 	icon(){
 		return "<img class='icon' src='/assets/icons/"+this.name.toLowerCase()+".png'/>";
@@ -913,7 +930,7 @@ Template.hiring.helpers({
 		});
 	},
 	prospects() {
-		return Prospects.find({ owner: { $exists: false } });
+		return Prospects.find({ owner: { $exists: false } },{ sort: { skillCount: -1 } });
 	}
 });
 
@@ -923,7 +940,10 @@ Template.hiring.events({
 	}
 });
 
-Template.employee.events({
+Template.worker.events({
+	'click .worker'() {
+		Meteor.call('hireWorker',this._id);
+	},
 	'click .task'() {
 		const user_skill = Skills.findOne({ "$and": [{ owner: this._id },{ name: this.skill }] },{ fields: { amount: 1 } });
 		const skill_amount = ( !user_skill || !user_skill.amount ? 0 : user_skill.amount );
@@ -932,7 +952,7 @@ Template.employee.events({
 	}
 });
 
-Template.employee.helpers({
+Template.worker.helpers({
 	name() {
 		if ( !this.name ) {
 			const player = Player.findOne({},{ fields: { username: 1 } });
@@ -947,18 +967,6 @@ Template.employee.helpers({
 		const pic = ( player && player.avatar ? player.avatar : 1 );
 		const avatar = ( !this.avatar ? "players/avatar-"+pic : "workers/person-"+this.avatar );
 		return "<img class='avatar round-lg' src='/assets/"+avatar+".png'/>"
-	}
-});
-
-Template.worker.events({
-	'click .worker'() {
-		Meteor.call('hireWorker',this._id);
-	}
-});
-
-Template.worker.helpers({
-	avatar() {
-		return "<img class='avatar' src='/assets/workers/person-"+this.avatar+".png'/>"
 	}
 });
 

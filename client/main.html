@@ -2,7 +2,7 @@
   <title>rpg</title>
   <link href="//cdn.materialdesignicons.com/3.2.89/css/materialdesignicons.min.css" rel="stylesheet" type="text/css" />
   <link href="https://fonts.googleapis.com/css?family=Lato:400,700" rel="stylesheet">
-  <meta name="viewport" content="width=device-width,initial-scale=1"/><meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/><meta charset="UTF-8"/>
 </head>
 
 <body>
@@ -137,8 +137,10 @@
   {{#if showTitle}}
     <div class="skill title">{{title}}</div>
   {{else}}
-    <div class="skill round-sm">
-      {{{icon}}}<span class="amount">{{amount}}{{{level}}}</span>
+    <div class="skill">
+      <div class="inner round-sm">
+        {{{icon}}}<span class="amount">{{{numbers}}}</span>
+      </div>
     </div>
   {{/if}}
 </template>
@@ -146,7 +148,7 @@
 <template name='skillLevel'>
   <div class="skill">
     <div class="inner round-sm">
-      {{{icon}}}<span class="amount">{{level}}</span>
+      {{{icon}}}<span class="amount">{{amount}}{{level}}</span>
     </div>
   </div>
 </template>
@@ -154,40 +156,36 @@
 <template name='worker'>
   <div class="worker">
     <div class="inside round-sm">
-      {{{avatar}}}
-      <div class="data">
-        <div class="name round-sm">{{name}}</div>
-        <div class="skills">
-          {{#each skills}}{{> skill}}{{/each}}
-        </div>
+      <div class="topper">
+        {{{avatar}}}<div class="name">{{name}}</div>
       </div>
-    </div>
-  </div>
-</template>
-
-<template name='employee'>
-  <div class="worker employee">
-        <div class="inside round-sm">
-        <div class="topper">
-          {{{avatar}}}<div class="name">{{name}}</div>
-        </div>
-        {{#each skills}}{{> skillLevel}}{{/each}}
-        {{#if menu}}
-          {{#each tasks}}{{> task}}{{/each}}
-        {{/if}}
+      {{#each skills}}{{> skill}}{{/each}}
+      {{#if menu}}
+        {{#each tasks}}{{> task}}{{/each}}
+      {{/if}}
     </div>
   </div>
 </template>
 
 <template name='hiring'>
   <div class='hiring'>
-    <div class="headline">Employees</div>
-    <div class="employees">
-      {{#each employees}}{{> employee}}{{/each}}
-    </div>
-    <div class="headline">Prospects</div>
-    <div class="prospects">
-      {{#each prospects}}{{> worker}}{{/each}}
+    <div class='workers'>
+      <div class="employees">
+        <div class='container slim'>
+          <div class="headline">Employees</div>
+          <div class='padding'>
+          {{#each employees}}{{> worker}}{{/each}}
+          </div>
+        </div>
+      </div>
+      <div class="prospects">
+        <div class='container slim'>
+          <div class="headline">Prospects</div>
+          <div class='padding'>
+          {{#each prospects}}{{> worker}}{{/each}}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -227,6 +225,9 @@
           {{#each avatars}}{{{image}}}{{/each}}
         </div>
         {{/if}}
+        {{#if showHiring}}
+          {{> hiring}}
+        {{/if}}
         {{> player}}
         <div class="background"></div>
         <div class="crafting">
@@ -238,7 +239,7 @@
                   <div class="headline flex"><span class="text">Choose Employee</span><span class="mdi mdi-close-box close close_menu"></span></div>
                 </div>
                 <div class="employees slim">
-                  {{#each employees}}{{> employee}}{{/each}}
+                  {{#each employees}}{{> worker}}{{/each}}
                 </div>
               {{/if}}
               {{#if showTasks}}
@@ -253,7 +254,7 @@
               <div class="header">
                 <div class="headline flex"><span class="text">{{city}} Work Stalls</span></div>
                 <div class="buttons">
-                  <span class="mdi round-sm mdi-account-supervisor show_workers"></span>
+                  <span class="mdi round-sm mdi-account-supervisor show_hiring"></span>
                 </div>
               </div>
               {{#each stalls}}{{> stall}}{{/each}}
@@ -264,7 +265,6 @@
           <div class="headline">Skills</div>
           {{#each skills}}{{> skill}}{{/each}}
         </div>
-        {{> hiring}}
         <div class="logs slim">
         {{#each logs}}{{> log}}{{/each}}
         </div>
@@ -293,7 +293,8 @@
           {{{chosen}}}
           {{#if showQuantity}}
             <input id="choiceQuantity" value="1" type="text"/>
-            <div class="choose">Select</div>
+            <div class="button choose">Select</div>
+            <div class="button chooseMax">Max</div>
           {{else}}
             {{#each menu}}{{{choice}}}{{/each}}
           {{/if}}

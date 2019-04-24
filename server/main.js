@@ -11,7 +11,7 @@ Accounts.onCreateUser(function(options, user) {
 	startingCity(user._id);
 	user.avatar = Math.floor(Math.random()*60+1);
 	user.energy = 0;
-	user.maxEnergy = 100;
+	user.maxEnergy = 150;
 	return user;
 });
 
