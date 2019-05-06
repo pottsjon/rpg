@@ -7,3 +7,4 @@ Workers = new Meteor.Collection("workers");
 Cities = new Meteor.Collection("cities");
 Positions = new Meteor.Collection("positions");
 Stalls = new Meteor.Collection("stalls");
+Battles = new Meteor.Collection("battles");

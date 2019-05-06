@@ -217,6 +217,26 @@
   </div>
 </template>
 
+<template name='battle'>
+  <div class="battle">
+      {{#each battles}}
+        <div class="allys">
+          {{#each allys}}
+            {{{ally_avatar}}}
+            {{ally_name}}
+          {{/each}}
+        </div>
+        <div class="opponents">
+          {{#each opponents}}
+            {{{opponent_avatar}}}
+            Opponent: {{opponent_name}}
+            Level: {{opponent_level}}        
+          {{/each}}
+        </div>
+      {{/each}}
+  </div>
+</template>
+
 <template name='town'>
   <div id='overlay' class='map flex'>
       <div class='box slim'>
@@ -229,8 +249,12 @@
           {{> hiring}}
         {{/if}}
         {{> player}}
+        <span class="mdi mdi-sword-cross floating start_battle"></span>
+        {{#if showBattle}}
+          {{> battle}}
+        {{/if}}
         <div class="background"></div>
-        <div class="crafting">
+        <div class="crafting {{toggled}}">
           {{> storage}}
           <div class="stalls slim">
             {{#if showMenus}}
@@ -284,7 +308,7 @@
         {{#each filters}}<div class="filter noselect {{selected}}">{{{check}}}{{text}}</div>{{/each}}
     </div>
     <div class="buttons">
-      <span class="mdi round-sm mdi-filter-variant filter_items {{filter_back}}"></span><span class="mdi round-sm mdi-sort-variant sort_items {{sort_back}}"></span>
+      <span class="mdi round-sm mdi-filter-variant filter_items {{filter_back}}"></span><span class="mdi round-sm mdi-sort-variant sort_items {{sort_back}}"></span><span class="mdi mdi-package-variant-closed inv toggle_storage"></span>
     </div>
     <div class="container slim {{hidden}}">
     {{#if showMenu}}

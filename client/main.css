@@ -36,6 +36,9 @@ img { pointer-events: none; }
 #overlay .background { width: 100%; height: 40%; background: #5db0d0 url(/assets/bg-village.png) no-repeat center bottom; }
 #overlay .crafting { font-size: 0; width: 100%; height: 60%; background: #454756; background: -moz-linear-gradient(top, #454756 0%, #373944 44%, #2d2f38 100%); background: -webkit-linear-gradient(top, #454756 0%,#373944 44%,#2d2f38 100%); background: linear-gradient(to bottom, #454756 0%,#373944 44%,#2d2f38 100%); filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#454756', endColorstr='#2d2f38',GradientType=0 ); }
 
+#overlay .floating { cursor: pointer; font-size: 20px; position: absolute; right: 20px; top: 20px; z-index: 101; color: #fff; }
+#overlay .battle { background: rgba(5, 36, 43, 0.9); width: 100%; height: 100%; position: absolute; z-index: 100; }
+
 #map { cursor: url('/assets/cursor-walk.png'), auto; background: #885530; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
 #map canvas:nth-child(2) { -moz-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); -webkit-box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); box-shadow: inset 12px 0 10px 2px rgba(111, 60, 22, 0.4), inset -12px 0 10px 2px rgba(111, 60, 22, 0.4); }
 
@@ -142,14 +145,14 @@ img { pointer-events: none; }
 .stall .job.start { cursor: pointer; background: #228c6f; border: 1px solid #35af8d; transition: background-color 0.5s ease; }
 .stall .job.start:hover { background: #269e7d; border: 1px solid #3ee0b3; }
 .stall .job.start .job-task { height: 54px; }
-.stall .job .job-worker { cursor: pointer; transition: all 0.5s ease; background: #597073; display: inline-block; vertical-align: middle; overflow: hidden; height: 100%; width: 20%; text-align: center; }
+.stall .job .job-worker { cursor: pointer; transition: background-color 0.5s ease; background: #597073; display: inline-block; vertical-align: middle; overflow: hidden; height: 100%; width: 20%; text-align: center; }
 .stall .job .job-worker .circle { width: 50px; height: 50px; overflow: hidden; display: inline-block; border: 1px solid #145964; background: #1b707d; background: -moz-linear-gradient(top, #1b707d 0%, #104f68 100%); background: -webkit-linear-gradient(top, #1b707d 0%,#104f68 100%); background: linear-gradient(to bottom, #1b707d 0%,#104f68 100%); filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1b707d', endColorstr='#104f68',GradientType=0 ); }
 .stall .job .job-worker:hover { background: #688286; }
 .stall .job .job-worker:hover .circle { border: 1px solid #0d505a; background: #2b8896; background: -moz-linear-gradient(top, #2b8896 0%, #165c77 100%); background: -webkit-linear-gradient(top, #2b8896 0%,#165c77 100%); background: linear-gradient(to bottom, #2b8896 0%,#165c77 100%); filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#2b8896', endColorstr='#165c77',GradientType=0 ); }
 .stall .job .job-task img, .stall .job .job-worker img { width: 100%; box-sizing: border-box; }
-.stall .job.running .job-task { cursor: pointer; display: inline-block; vertical-align: middle; width: 20%; text-align: center; box-sizing: border-box; }
-.stall .job.running .job-task img { cursor: pointer; transition: all 0.5s ease; width: 100%; height: 52px; border-right: 1px solid #0e8799; box-sizing: border-box; background: #0d5877; background: -moz-radial-gradient(center, ellipse cover, #0d5877 0%, #053245 100%); background: -webkit-radial-gradient(center, ellipse cover, #0d5877 0%,#053245 100%); background: radial-gradient(ellipse at center, #0d5877 0%,#053245 100%); filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#0d5877', endColorstr='#053245',GradientType=1 ); }
-.stall .job.running .job-task:hover img { box-sizing: border-box; background: #1d7194; background: -moz-radial-gradient(center, ellipse cover, #1d7194 0%, #053245 100%); background: -webkit-radial-gradient(center, ellipse cover, #1d7194 0%,#053245 100%); background: radial-gradient(ellipse at center, #1d7194 0%,#053245 100%); filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1d7194', endColorstr='#053245',GradientType=1 ); }
+.stall .job.running .job-task { cursor: pointer; display: inline-block; vertical-align: middle; width: 20%; text-align: center; border-left: 1px solid #4b8188; border-right: 1px solid #0e8799; background: #0d5877; background: radial-gradient(ellipse at center,#0d5877 0,#053245 100%); filter: progid:DXImageTransform.Microsoft.gradie; box-sizing: border-box; }
+.stall .job.running .job-task img { cursor: pointer; transition: background-color 0.5s ease; width: auto; max-height: 52px; box-sizing: border-box; }
+.stall .job.running .job-task:hover { background: #1d7194; background: -moz-radial-gradient(center, ellipse cover, #1d7194 0%, #053245 100%); background: -webkit-radial-gradient(center, ellipse cover, #1d7194 0%,#053245 100%); background: radial-gradient(ellipse at center, #1d7194 0%,#053245 100%); filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#1d7194', endColorstr='#053245',GradientType=1 ); }
 .stall .job.choose { height: 54px; }
 .stall .job.choose .job-task { padding: 1px; box-sizing: border-box; display: inline-block; vertical-align: middle; width: 80%; height: 100%; }
 .stall .job.start .job-task { width: 100%; text-align: center; text-transform: uppercase; font-weight: bold; font-size: 18px; color: #57cead; box-sizing: border-box; }
@@ -166,7 +169,7 @@ img { pointer-events: none; }
 .stall .job .skill-text .amount { float: right; }
 
 .crafting .header { z-index: 15; position: absolute; top: 0; left: 0; width: 100%; padding: 2px; box-sizing: border-box; height: 40px; }
-.crafting .header .headline { position: relative; justify-content: normal; overflow: hidden; color: #d4d4d3; background: rgba(0, 0, 0, 0.3); text-transform: uppercase; font-size: 14px; font-weight: bold; width: 100%; height: 36px; line-height: 14px; padding: 0 5px; box-sizing: border-box; }
+.crafting .header .headline { position: relative; justify-content: normal; overflow: hidden; color: #d4d4d3; background: rgba(0, 0, 0, 0.3); text-transform: uppercase;  width: 100%; height: 36px; font-size: 10px; line-height: 12px; padding: 0 5px; font-weight: bold; box-sizing: border-box; }
 .crafting .header .headline .text { max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
 .crafting .storage .header .headline .text { max-width: 100px; }
 .crafting .stalls .header .headline { background: #22232b; }
@@ -195,7 +198,7 @@ img { pointer-events: none; }
 .storage .filter.clear:hover { background: #251803; }
 .storage .sort .mdi, .storage .filter .mdi { margin-right: 2px; }
 .storage .sort.selected { background: #31220a; }
-.storage .buttons { position: absolute; top: 4px; right: 10px; z-index: 20; }
+.storage .buttons { position: absolute; top: 4px; right: 5px; z-index: 20; }
 .storage .buttons .mdi { display: inline-block; vertical-align: top; font-size: 26px; padding: 0 5px; margin-left: 5px; color: #987848; cursor: pointer; }
 .storage .buttons .mdi.selected { background: #58401a; }
 .storage .container { position: relative; display: inline-block; width: 100%; height: 100%; overflow-y: auto; padding: 2px; box-sizing: border-box; }
@@ -215,6 +218,17 @@ img { pointer-events: none; }
 .storage .slim { scrollbar-width: thin; scrollbar-color: #836e4e #6f4e1d; }
 .storage .slim::-webkit-scrollbar-track { background-color: #6f4e1d; }
 .storage .slim::-webkit-scrollbar-thumb { background-color: #836e4e; }
+
+.crafting.toggled .storage { margin-left: -40%; }
+.crafting.toggled .stalls { width: 100%; }
+.crafting.toggled .stalls .stall .job .job-worker .circle { width: 60px; height: 60px; }
+.crafting.toggled .stalls .stall .job.running .job-task img { max-height: 62px; }
+.crafting.toggled .stalls .stall .job.choose { height: 64px; }
+.crafting.toggled .stalls .stall .job .skill-text { height: 26px; line-height: 26px; }
+.crafting.toggled .stalls .stall .job .queue { height: 25px; }
+.crafting.toggled .stalls .stall .job .queue .text, .crafting.toggled .stalls .stall .job .queue .progress { height: 25px; line-height: 25px; }
+.crafting.toggled .stalls .worker { width: 33%; }
+.crafting.toggled .stalls .stall .job .skill-text { font-size: 12px; }
 
 .item { cursor: pointer; position: relative; padding: 2px; width: 33.33%; display: inline-block; vertical-align: middle; box-sizing: border-box; text-align: center; }
 .item .image { vertical-align: top; overflow: hidden; position: relative; border: 1px solid #6b6b6b; background: #6b6b6b; background: -moz-radial-gradient(center, ellipse cover, #6b6b6b 0%, #494949 44%, #161616 100%); background: -webkit-radial-gradient(center, ellipse cover, #6b6b6b 0%,#494949 44%,#161616 100%); background: radial-gradient(ellipse at center, #6b6b6b 0%,#494949 44%,#161616 100%); filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#6b6b6b', endColorstr='#161616',GradientType=1 ); }

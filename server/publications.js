@@ -6,6 +6,10 @@ Meteor.publish("stalls", function (city) {
 	return Stalls.find({ "$and": [{ owner: this.userId },{ city: city }] });
 });
 
+Meteor.publish("battles", function () {
+	return Battles.find({ owner: this.userId });
+});
+
 Meteor.publish("positions", function () {
 	return Positions.find({ owner: this.userId });
 });

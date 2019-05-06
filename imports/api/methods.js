@@ -1,4 +1,153 @@
 Meteor.methods({
+	'startBattle': function(end) {
+		if ( Meteor.isServer ) {
+			const time_now = (new Date()).getTime();
+			Battles.update({ "$and": [
+				{ owner: this.userId },
+				{ completed: { $exists: false } },
+			] },{ $set: { completed: time_now } },
+			function(err, count) {
+			});
+			if ( !end ) {
+				const battle = {
+					owner: this.userId,
+					started: time_now,
+					allies: [{
+						_id: this.userId,
+						level: 1,
+						health: 100,
+						stats: {
+							attack: 10,
+							speed: 5,
+							defense: 6,
+							armor: 5,
+							magic_defense: 5
+						},
+						attacks: [
+							{ 
+								name: "Slash",
+								time: 4,
+								cooldown: 6,
+								open: 1,
+								power: 100
+							},
+							{ 
+								name: "Lunge",
+								time: 5,
+								cooldown: 6,
+								open: 2,
+								power: 150
+							},
+							{
+								name: "Jab",
+								time: 2,
+								cooldown: 4,
+								power: 50
+							},
+							{
+								name: "Thrust",
+								time: 3,
+								cooldown: 6,
+								open: 2,
+								power: 125
+							}
+						]
+					}],
+					opponents: [{
+						_id : Random.id(),
+						name: "Skeleton",
+						level: 1,
+						health: 100,
+						stats: {
+							attack: 5,
+							speed: 5,
+							defense: 5,
+							armor: 5,
+							magic_defense: 5
+						},
+						attacks: [
+							{ 
+								name: "Slash",
+								time: 4,
+								cooldown: 6,
+								open: 1,
+								power: 100
+							},
+							{ 
+								name: "Lunge",
+								time: 5,
+								cooldown: 6,
+								open: 2,
+								power: 150
+							},
+							{
+								name: "Jab",
+								time: 2,
+								cooldown: 4,
+								power: 50
+							},
+							{
+								name: "Thrust",
+								time: 3,
+								cooldown: 6,
+								open: 2,
+								power: 125
+							}
+						]
+					},
+					{
+						_id : Random.id(),
+						name: "Skeleton",
+						level: 1,
+						health: 100,
+						stats: {
+							attack: 5,
+							speed: 5,
+							defense: 5,
+							armor: 5,
+							magic_defense: 5
+						},
+						attacks: [
+							{ 
+								name: "Slash",
+								time: 4,
+								cooldown: 6,
+								open: 1,
+								power: 100
+							},
+							{ 
+								name: "Lunge",
+								time: 5,
+								cooldown: 6,
+								open: 2,
+								power: 150
+							},
+							{
+								name: "Jab",
+								time: 2,
+								cooldown: 4,
+								power: 50
+							},
+							{
+								name: "Thrust",
+								time: 3,
+								cooldown: 6,
+								open: 2,
+								power: 125
+							}
+						]
+					}]
+				};
+				Battles.insert(battle,
+				function(err, id) {
+					if ( id ) {
+					battle._id = id;
+					startBattle(battle);
+					};
+				});
+			};
+		};
+	},
 	'eatFood': function(itemId, amount) {
 		if ( Meteor.isServer ) {
 			const inv = Inventory.findOne({ _id: itemId },{ fields: { amount: 1, item: 1 } });

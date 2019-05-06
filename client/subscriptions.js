@@ -18,3 +18,4 @@ Meteor.subscribe('hitcities');
 Meteor.subscribe('cities');
 Meteor.subscribe('positions');
 Meteor.subscribe('player');
+Meteor.subscribe('battles');

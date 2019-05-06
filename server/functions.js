@@ -24,6 +24,50 @@ workforceAdd = function (count, city) {
     });
 };
 
+var battleTimer = [];
+startBattle = function (battle) {
+    let fighters = [];
+    battle.allies.forEach((ally) => {
+        ally.ally = true;
+        fighters.push(ally);
+    });
+    battle.opponents.forEach((opponent) => {
+        opponent.opponent = true;
+        fighters.push(opponent);
+    });
+    fighterAttack = function (fighter) {
+        const random = Math.floor(Math.random()*fighter.attacks.length)+1;
+        const attack = fighter.attacks[random-1];
+        fighter.attacks.splice(random-1,1);
+        if ( attack.open ) {
+            fighter.open = true;
+            Meteor.setTimeout(function() {
+                fighter.open = false;
+            }, 1000*attack.open);
+        };
+        Meteor.setTimeout(function() {
+            fighter.attacks.push(attack);
+        }, 1000*attack.cooldown);
+        battleTimer[fighter._id] = Meteor.setTimeout(function() {
+            checkAttacksLength = function () {
+                if ( fighter.attacks.length > 1 ) {
+                    fighterAttack(fighter);
+                } else {
+                    Meteor.setTimeout(function() {
+                        console.log("waiting");
+                        checkAttacksLength();
+                    }, 500);
+                };
+            };
+            checkAttacksLength();
+        }, 1000*attack.time);
+    };
+    fighters.forEach((fighter) => {
+        try { Meteor.clearTimeout(battleTimer[fighter._id]) } catch(e) {};
+        fighterAttack(fighter);
+    });
+};
+
 startingCity = function (userId) {
 	const city_list = Cities.find({ type: "City" }).fetch();
 	const choice = Math.floor(Math.random()*(city_list.length-1));
@@ -520,49 +564,49 @@ checkTasks = function () {
             type: "Resource",
             skill: "Farming",
             task: "Farm Strawberry",
-            exp: 0,
+            level: 1,
             items: ["Strawberry"]
         },
         {
             type: "Resource",
             skill: "Farming",
             task: "Farm Orange",
-            exp: 2000,
+            level: 2,
             items: ["Orange"]
         },
         {
             type: "Resource",
             skill: "Farming",
             task: "Farm Apple",
-            exp: 4000,
+            level: 3,
             items: ["Apple"]
         },
         {
             type: "Resource",
             skill: "Farming",
             task: "Farm Banana",
-            exp: 8000,
+            level: 4,
             items: ["Banana"]
         },
         {
             type: "Resource",
             skill: "Farming",
             task: "Farm Plum",
-            exp: 16000,
+            level: 5,
             items: ["Plum"]
         },
         {
             type: "Resource",
             skill: "Farming",
             task: "Farm Peach",
-            exp: 32000,
+            level: 6,
             items: ["Peach"]
         },
         {
             type: "Resource",
             skill: "Mining",
             task: "Mine Bronze",
-            exp: 0,
+            level: 1,
             energy: 5,
             items: ["Bronze Ore", "Yellow Gem"]
         },
@@ -570,7 +614,7 @@ checkTasks = function () {
             type: "Resource",
             skill: "Mining",
             task: "Mine Copper",
-            exp: 2000,
+            level: 2,
             energy: 10,
             items: ["Copper Ore", "Yellow Gem", "Green Gem"]
         },
@@ -578,7 +622,7 @@ checkTasks = function () {
             type: "Resource",
             skill: "Mining",
             task: "Mine Silver",
-            exp: 5000,
+            level: 3,
             energy: 15,
             items: ["Silver Ore", "Yellow Gem", "Green Gem"]
         },
@@ -586,7 +630,7 @@ checkTasks = function () {
             type: "Resource",
             skill: "Mining",
             task: "Mine Gold",
-            exp: 10000,
+            level: 4,
             energy: 20,
             items: ["Gold Ore", "Yellow Gem", "Green Gem", "Blue Gem"]
         },
@@ -594,7 +638,7 @@ checkTasks = function () {
             type: "Resource",
             skill: "Mining",
             task: "Mine Iron",
-            exp: 20000,
+            level: 5,
             energy: 25,
             items: ["Iron Ore", "Yellow Gem", "Green Gem", "Blue Gem"]
         },
@@ -602,7 +646,7 @@ checkTasks = function () {
             type: "Resource",
             skill: "Mining",
             task: "Mine Titanium",
-            exp: 40000,
+            level: 6,
             energy: 30,
             items: ["Titanium Ore", "Yellow Gem", "Green Gem", "Blue Gem", "Red Gem"]
         },
@@ -610,7 +654,7 @@ checkTasks = function () {
             type: "Resource",
             skill: "Logging",
             task: "Chop Maple",
-            exp: 0,
+            level: 1,
             energy: 5,
             items: ["Maple Log"]
         },
@@ -618,7 +662,7 @@ checkTasks = function () {
             type: "Resource",
             skill: "Logging",
             task: "Chop Ash",
-            exp: 2000,
+            level: 2,
             energy: 10,
             items: ["Ash Log"]
         },
@@ -626,7 +670,7 @@ checkTasks = function () {
             type: "Resource",
             skill: "Logging",
             task: "Chop Elm",
-            exp: 4000,
+            level: 3,
             energy: 15,
             items: ["Elm Log"]
         },
@@ -634,7 +678,7 @@ checkTasks = function () {
             type: "Resource",
             skill: "Logging",
             task: "Chop Cedar",
-            exp: 8000,
+            level: 4,
             energy: 20,
             items: ["Cedar Log"]
         },
@@ -642,7 +686,7 @@ checkTasks = function () {
             type: "Resource",
             skill: "Logging",
             task: "Chop Fir",
-            exp: 16000,
+            level: 5,
             energy: 25,
             items: ["Fir Log"]
         },
@@ -650,15 +694,111 @@ checkTasks = function () {
             type: "Resource",
             skill: "Logging",
             task: "Chop Pine",
-            exp: 32000,
+            level: 6,
             energy: 30,
             items: ["Pine Log"]
+        },
+        {
+            type: "Resource",
+            skill: "Foraging",
+            task: "Forage Cotton",
+            level: 1,
+            energy: 5,
+            items: ["Cotton"]
+        },
+        {
+            type: "Resource",
+            skill: "Foraging",
+            task: "Forage Milkweed",
+            level: 2,
+            energy: 10,
+            items: ["Milkweed"]
+        },
+        {
+            type: "Resource",
+            skill: "Foraging",
+            task: "Forage Grass",
+            level: 3,
+            energy: 15,
+            items: ["Grass"]
+        },
+        {
+            type: "Resource",
+            skill: "Foraging",
+            task: "Forage Coconut",
+            level: 4,
+            energy: 20,
+            items: ["Coconut"]
+        },
+        {
+            type: "Resource",
+            skill: "Foraging",
+            task: "Forage Flax",
+            level: 5,
+            energy: 25,
+            items: ["Flax"]
+        },
+        {
+            type: "Resource",
+            skill: "Foraging",
+            task: "Forage Jute",
+            level: 6,
+            energy: 30,
+            items: ["Jute"]
+        },
+        {
+            type: "Resource",
+            skill: "Hunting",
+            task: "Hunt Fine",
+            level: 1,
+            energy: 5,
+            items: ["Fine Carcass"]
+        },
+        {
+            type: "Resource",
+            skill: "Hunting",
+            task: "Hunt Light",
+            level: 2,
+            energy: 10,
+            items: ["Light Carcass"]
+        },
+        {
+            type: "Resource",
+            skill: "Hunting",
+            task: "Hunt Heavy",
+            level: 3,
+            energy: 15,
+            items: ["Heavy Carcass"]
+        },
+        {
+            type: "Resource",
+            skill: "Hunting",
+            task: "Hunt Rough",
+            level: 4,
+            energy: 20,
+            items: ["Rough Carcass"]
+        },
+        {
+            type: "Resource",
+            skill: "Hunting",
+            task: "Hunt Rugged",
+            level: 5,
+            energy: 25,
+            items: ["Rugged Carcass"]
+        },
+        {
+            type: "Resource",
+            skill: "Hunting",
+            task: "Hunt Tough",
+            level: 6,
+            energy: 30,
+            items: ["Tough Carcass"]
         },
         {
             type: "Material",
             skill: "Blacksmithing",
             task: "Smelt Bronze",
-            exp: 0,
+            level: 1,
             energy: 5,
             items: ["Bronze Bar"],
             requires: [{ name: "Bronze Ore", amount: 5 }]
@@ -667,16 +807,52 @@ checkTasks = function () {
             type: "Material",
             skill: "Blacksmithing",
             task: "Smelt Copper",
-            exp: 100,
+            level: 2,
             energy: 10,
             items: ["Copper Bar"],
             requires: [{ name: "Copper Ore", amount: 5 }]
         },
         {
             type: "Material",
+            skill: "Blacksmithing",
+            task: "Smelt Silver",
+            level: 3,
+            energy: 15,
+            items: ["Silver Bar"],
+            requires: [{ name: "Silver Ore", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Blacksmithing",
+            task: "Smelt Gold",
+            level: 4,
+            energy: 20,
+            items: ["Gold Bar"],
+            requires: [{ name: "Gold Ore", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Blacksmithing",
+            task: "Smelt Iron",
+            level: 5,
+            energy: 25,
+            items: ["Iron Bar"],
+            requires: [{ name: "Iron Ore", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Blacksmithing",
+            task: "Smelt Titanium",
+            level: 6,
+            energy: 30,
+            items: ["Titanium Bar"],
+            requires: [{ name: "Titanium Ore", amount: 5 }]
+        },
+        {
+            type: "Material",
             skill: "Woodworking",
             task: "Process Maple",
-            exp: 0,
+            level: 1,
             energy: 5,
             items: ["Maple Wood"],
             requires: [{ name: "Maple Log", amount: 5 }]
@@ -685,7 +861,7 @@ checkTasks = function () {
             type: "Material",
             skill: "Woodworking",
             task: "Process Ash",
-            exp: 100,
+            level: 2,
             energy: 10,
             items: ["Ash Wood"],
             requires: [{ name: "Ash Log", amount: 5 }]
@@ -694,10 +870,145 @@ checkTasks = function () {
             type: "Material",
             skill: "Woodworking",
             task: "Process Elm",
-            exp: 200,
+            level: 3,
             energy: 15,
             items: ["Elm Wood"],
             requires: [{ name: "Elm Log", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Woodworking",
+            task: "Process Cedar",
+            level: 4,
+            energy: 20,
+            items: ["Cedar Wood"],
+            requires: [{ name: "Cedar Log", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Woodworking",
+            task: "Process Fir",
+            level: 5,
+            energy: 25,
+            items: ["Fir Wood"],
+            requires: [{ name: "Fir Log", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Woodworking",
+            task: "Process Pine",
+            level: 6,
+            energy: 30,
+            items: ["Pine Wood"],
+            requires: [{ name: "Pine Log", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Textiles",
+            task: "Weave Cotton",
+            level: 1,
+            energy: 5,
+            items: ["Cotton"],
+            requires: [{ name: "Cotton Fabric", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Textiles",
+            task: "Weave Milkweed",
+            level: 2,
+            energy: 10,
+            items: ["Milkweed"],
+            requires: [{ name: "Milkweed Fabric", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Textiles",
+            task: "Weave Grass",
+            level: 3,
+            energy: 15,
+            items: ["Grass"],
+            requires: [{ name: "Grass Fabric", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Textiles",
+            task: "Weave Coconut",
+            level: 4,
+            energy: 20,
+            items: ["Coconut"],
+            requires: [{ name: "Coconut Fabric", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Textiles",
+            task: "Weave Flax",
+            level: 5,
+            energy: 25,
+            items: ["Flax"],
+            requires: [{ name: "Flax Fabric", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Textiles",
+            task: "Weave Jute",
+            level: 6,
+            energy: 30,
+            items: ["Jute"],
+            requires: [{ name: "Jute Fabric", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Leatherworking",
+            task: "Tan Fine",
+            level: 1,
+            energy: 5,
+            items: ["Fine Leather"],
+            requires: [{ name: "Fine Carcass", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Leatherworking",
+            task: "Tan Light",
+            level: 2,
+            energy: 10,
+            items: ["Light Leather"],
+            requires: [{ name: "Light Carcass", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Leatherworking",
+            task: "Tan Heavy",
+            level: 3,
+            energy: 15,
+            items: ["Heavy Leather"],
+            requires: [{ name: "Heavy Carcass", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Leatherworking",
+            task: "Tan Rough",
+            level: 4,
+            energy: 20,
+            items: ["FiRoughne Leather"],
+            requires: [{ name: "Rough Carcass", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Leatherworking",
+            task: "Tan Rugged",
+            level: 5,
+            energy: 25,
+            items: ["Rugged Leather"],
+            requires: [{ name: "Rugged Carcass", amount: 5 }]
+        },
+        {
+            type: "Material",
+            skill: "Leatherworking",
+            task: "Tan Tough",
+            level: 6,
+            energy: 30,
+            items: ["Tough Leather"],
+            requires: [{ name: "Tough Carcass", amount: 5 }]
         }
     ];
     data.forEach((job) => {
@@ -783,7 +1094,7 @@ checkItems = function () {
             rarity: 'Common',
             name: { single: "Silver Ore" , plural: "Silver Ore" },
             roll: 0,
-            level: 4
+            level: 3
         },
         {
             skill: "Mining",
@@ -791,7 +1102,7 @@ checkItems = function () {
             rarity: 'Common',
             name: { single: "Gold Ore" , plural: "Gold Ore" },
             roll: 0,
-            level: 5
+            level: 4
         },
         {
             skill: "Mining",
@@ -799,7 +1110,7 @@ checkItems = function () {
             rarity: 'Common',
             name: { single: "Iron Ore" , plural: "Iron Ore" },
             roll: 0,
-            level: 3
+            level: 5
         },
         {
             skill: "Mining",
@@ -823,7 +1134,7 @@ checkItems = function () {
             rarity: 'Rare',
             name: { single: "Green Gem" , plural: "Green Gems" },
             roll: 750,
-            level: 2
+            level: 1
         },
         {
             skill: "Mining",
@@ -831,7 +1142,7 @@ checkItems = function () {
             rarity: 'Epic',
             name: { single: "Blue Gem" , plural: "Blue Gems" },
             roll: 850,
-            level: 3
+            level: 1
         },
         {
             skill: "Mining",
@@ -839,7 +1150,7 @@ checkItems = function () {
             rarity: 'Legendary',
             name: { single: "Red Gem" , plural: "Red Gems" },
             roll: 950,
-            level: 3
+            level: 1
         },
         {
             skill: "Logging",
@@ -906,6 +1217,38 @@ checkItems = function () {
             level: 2
         },
         {
+            skill: "Blacksmithing",
+            type: "Metal",
+            rarity: 'Common',
+            name: { single: "Silver Bar" , plural: "Silver Bars" },
+            roll: 0,
+            level: 3
+        },
+        {
+            skill: "Blacksmithing",
+            type: "Metal",
+            rarity: 'Common',
+            name: { single: "Gold Bar" , plural: "Gold Bars" },
+            roll: 0,
+            level: 4
+        },
+        {
+            skill: "Blacksmithing",
+            type: "Metal",
+            rarity: 'Common',
+            name: { single: "Iron Bar" , plural: "Iron Bars" },
+            roll: 0,
+            level: 5
+        },
+        {
+            skill: "Blacksmithing",
+            type: "Metal",
+            rarity: 'Common',
+            name: { single: "Titanium Bar" , plural: "Titanium Bars" },
+            roll: 0,
+            level: 6
+        },
+        {
             skill: "Woodworking",
             type: "Wood",
             rarity: 'Common',
@@ -920,6 +1263,230 @@ checkItems = function () {
             name: { single: "Ash Wood" , plural: "Ash Wood" },
             roll: 0,
             level: 2
+        },
+        {
+            skill: "Woodworking",
+            type: "Wood",
+            rarity: 'Common',
+            name: { single: "Elm Wood" , plural: "Elm Wood" },
+            roll: 0,
+            level: 3
+        },
+        {
+            skill: "Woodworking",
+            type: "Wood",
+            rarity: 'Common',
+            name: { single: "Cedar Wood" , plural: "Cedar Wood" },
+            roll: 0,
+            level: 4
+        },
+        {
+            skill: "Woodworking",
+            type: "Wood",
+            rarity: 'Common',
+            name: { single: "Fir Wood" , plural: "Fir Wood" },
+            roll: 0,
+            level: 5
+        },
+        {
+            skill: "Woodworking",
+            type: "Wood",
+            rarity: 'Common',
+            name: { single: "Pine Wood" , plural: "Pine Wood" },
+            roll: 0,
+            level: 6
+        },
+        {
+            skill: "Foraging",
+            type: "Plant",
+            rarity: 'Common',
+            name: { single: "Cotton" , plural: "Cotton" },
+            roll: 0,
+            level: 1
+        },
+        {
+            skill: "Foraging",
+            type: "Plant",
+            rarity: 'Common',
+            name: { single: "Milkweed" , plural: "Milkweeds" },
+            roll: 0,
+            level: 2
+        },
+        {
+            skill: "Foraging",
+            type: "Plant",
+            rarity: 'Common',
+            name: { single: "Grass" , plural: "Grass" },
+            roll: 0,
+            level: 3
+        },
+        {
+            skill: "Foraging",
+            type: "Plant",
+            rarity: 'Common',
+            name: { single: "Coconut" , plural: "Coconuts" },
+            roll: 0,
+            level: 4
+        },
+        {
+            skill: "Foraging",
+            type: "Plant",
+            rarity: 'Common',
+            name: { single: "Flax" , plural: "Flax" },
+            roll: 0,
+            level: 5
+        },
+        {
+            skill: "Foraging",
+            type: "Plant",
+            rarity: 'Common',
+            name: { single: "Jute" , plural: "Jute" },
+            roll: 0,
+            level: 6
+        },
+        {
+            skill: "Textiles",
+            type: "Cloth",
+            rarity: 'Common',
+            name: { single: "Cotton Fabric" , plural: "Cotton Fabric" },
+            roll: 0,
+            level: 1
+        },
+        {
+            skill: "Textiles",
+            type: "Cloth",
+            rarity: 'Common',
+            name: { single: "Milkweed Fabric" , plural: "Milkweeds Fabric" },
+            roll: 0,
+            level: 2
+        },
+        {
+            skill: "Textiles",
+            type: "Cloth",
+            rarity: 'Common',
+            name: { single: "Grass Fabric" , plural: "Grass Fabric" },
+            roll: 0,
+            level: 3
+        },
+        {
+            skill: "Textiles",
+            type: "Cloth",
+            rarity: 'Common',
+            name: { single: "Coconut Fabric" , plural: "Coconuts Fabric" },
+            roll: 0,
+            level: 4
+        },
+        {
+            skill: "Textiles",
+            type: "Cloth",
+            rarity: 'Common',
+            name: { single: "Flax Fabric" , plural: "Flax Fabric" },
+            roll: 0,
+            level: 5
+        },
+        {
+            skill: "Textiles",
+            type: "Cloth",
+            rarity: 'Common',
+            name: { single: "Jute Fabric" , plural: "Jute Fabric" },
+            roll: 0,
+            level: 6
+        },  
+        {
+            skill: "Hunting",
+            type: "Carcass",
+            rarity: 'Common',
+            name: { single: "Fine Carcass" , plural: "Fine Carcasses" },
+            roll: 0,
+            level: 1
+        },
+        {
+            skill: "Hunting",
+            type: "Carcass",
+            rarity: 'Common',
+            name: { single: "Light Carcass" , plural: "Light Carcasses" },
+            roll: 0,
+            level: 2
+        },
+        {
+            skill: "Hunting",
+            type: "Carcass",
+            rarity: 'Common',
+            name: { single: "Heavy Carcass" , plural: "Heavy Carcasses" },
+            roll: 0,
+            level: 3
+        },
+        {
+            skill: "Hunting",
+            type: "Carcass",
+            rarity: 'Common',
+            name: { single: "Rough Carcass" , plural: "Rough Carcasses" },
+            roll: 0,
+            level: 4
+        },
+        {
+            skill: "Hunting",
+            type: "Carcass",
+            rarity: 'Common',
+            name: { single: "Rugged Carcass" , plural: "Rugged Carcasses" },
+            roll: 0,
+            level: 5
+        },
+        {
+            skill: "Hunting",
+            type: "Carcass",
+            rarity: 'Common',
+            name: { single: "Tough Carcass" , plural: "Tough Carcasses" },
+            roll: 0,
+            level: 6
+        },
+        {
+            skill: "Leatherworking",
+            type: "Leather",
+            rarity: 'Common',
+            name: { single: "Fine Leather" , plural: "Fine Leathers" },
+            roll: 0,
+            level: 1
+        },
+        {
+            skill: "Leatherworking",
+            type: "Leather",
+            rarity: 'Common',
+            name: { single: "Light Leather" , plural: "Light Leathers" },
+            roll: 0,
+            level: 2
+        },
+        {
+            skill: "Leatherworking",
+            type: "Leather",
+            rarity: 'Common',
+            name: { single: "Heavy Leather" , plural: "Heavy Leathers" },
+            roll: 0,
+            level: 3
+        },
+        {
+            skill: "Leatherworking",
+            type: "Leather",
+            rarity: 'Common',
+            name: { single: "Rough Leather" , plural: "Rough Leathers" },
+            roll: 0,
+            level: 4
+        },
+        {
+            skill: "Leatherworking",
+            type: "Leather",
+            rarity: 'Common',
+            name: { single: "Rugged Leather" , plural: "Rugged Leathers" },
+            roll: 0,
+            level: 5
+        },
+        {
+            skill: "Leatherworking",
+            type: "Leather",
+            rarity: 'Common',
+            name: { single: "Tough Leather" , plural: "Tough Leathers" },
+            roll: 0,
+            level: 6
         }
     ];
     data.forEach((item) => {

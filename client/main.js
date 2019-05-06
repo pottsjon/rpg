@@ -16,7 +16,7 @@ import '../imports/api/methods.js';
 import './management/main.js';
 import './map.js';
 import { SlowBuffer } from 'buffer';
-import { ENGINE_METHOD_CIPHERS } from 'constants';
+import { ENGINE_METHOD_CIPHERS, SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS, SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION } from 'constants';
 
 UI.body.onRendered(function() {
 	Tracker.autorun(function() {
@@ -147,7 +147,7 @@ Template.stall.helpers({
 		let inside = "", worker = "", flex = "";
 		if ( this.worker ) {
 			const find_worker = Workers.findOne({ _id: this.worker },{ fields: { avatar: 1 } });
-			const player = Player.findOne({},{ fields: { avatar: 1 } });
+			const player = Player.findOne({ _id: Meteor.userId() },{ fields: { avatar: 1 } });
 			const pic = ( player && player.avatar ? player.avatar : 1 );
 			const avatar = ( this.worker == Meteor.userId() ? "players/avatar-"+pic : "workers/person-"+find_worker.avatar );
 			worker = "<div class='job-worker select_worker noselect'><div class='round-lg circle'><img src='/assets/"+avatar+".png'/></div></div>";
@@ -185,12 +185,42 @@ Template.stall.helpers({
 	},
 });
 
+Template.battle.helpers({
+	battles(){
+		return Battles.find({ completed: { $exists: false } });
+	},
+	allys(){
+		const allys = ( !this.allys ? [] : this.allys );
+		const player = Player.findOne({ _id: Meteor.userId() },{ fields: { username: 1, avatar: 1 } });
+		allys.unshift(player)
+		return allys;
+	},
+	ally_avatar(){
+		return "<img class='avatar round-lg' src='/assets/players/avatar-"+this.avatar+".png'/>"
+	},
+	ally_name(){
+		return this.username;
+	},
+	opponent_avatar(){
+		const image = this.name.replace(/\s+/g, '-').toLowerCase()+"-"+this.level;
+		return "<img class='avatar round-lg' src='/assets/mobs/"+image+".png'/>"
+	},
+	opponent_name(){
+		return this.name;
+	},
+	opponent_level(){
+		return this.level;
+	}
+});
+
 Template.town.onCreated(function () {
 	this.taskSelect = new ReactiveVar( false );
 	this.taskInfo = new ReactiveVar( false );
 	this.stallSelect = new ReactiveVar( false );
 	this.showAvatars = new ReactiveVar( false );
 	this.showHiring = new ReactiveVar( false );
+	this.storageToggle = new ReactiveVar( false );
+	this.townBattle = new ReactiveVar( false );
 	Tracker.autorun(function() {
 		let visiting = Positions.findOne({ 'city.visiting': true },{ fields: { 'city.name': 1 } });
 		if ( visiting && visiting.city.name ) {
@@ -213,6 +243,24 @@ Template.town.onCreated(function () {
 });
 
 Template.town.events({
+	'click .start_battle'(e,t) {
+		const toggle = t.townBattle.get();
+		if ( toggle ) {
+			t.townBattle.set(false);
+			Meteor.call('startBattle', true);
+		} else {
+			t.townBattle.set(true);
+			Meteor.call('startBattle');
+		};	
+	},
+	'click .toggle_storage'(e,t) {
+		const toggle = t.storageToggle.get();
+		if ( toggle ) {
+			t.storageToggle.set(false);
+		} else {
+			t.storageToggle.set(true);
+		};
+	},
 	'click .prospects, click .employees, click .headline'(e,t) {
 		e.stopPropagation();
 	},
@@ -247,9 +295,9 @@ Template.town.events({
 	'click .start_task'(e, t) {
 		if ( !this.waiting && !this.waitings ) {
 			const stall = t.stallSelect.get();
-			const user_skill = Skills.findOne({ "$and": [{ owner: this.worker },{ name: this.skill }] },{ fields: { amount: 1 } });
-			const skill_amount = ( !user_skill || !user_skill.amount ? 0 : user_skill.amount );
-			if ( skill_amount >= this.exp ) {
+			const user_skill = Skills.findOne({ "$and": [{ owner: this.worker },{ name: this.skill }] },{ fields: { level: 1 } });
+			const skill_level = ( !user_skill || !user_skill.level ? 1 : user_skill.level );
+			if ( skill_level >= this.level ) {
 				Meteor.call('startTask', stall._id, this.worker, this._id);
 				t.stallSelect.set(false);
 				t.taskInfo.set(false);
@@ -282,6 +330,14 @@ Template.town.events({
 });
 
 Template.town.helpers({
+	showBattle(){
+		return Template.instance().townBattle.get();	
+	},
+	toggled(){
+		const toggle = Template.instance().storageToggle.get();
+		if ( toggle )
+		return "toggled";	
+	},
 	image(){
 		return "<div class='avatar choose_avatar'><img src='/assets/players/avatar-"+this.image+".png'</div>";
 	},
@@ -325,11 +381,12 @@ Template.town.helpers({
 		let taskInfo = Template.instance().taskInfo.get();
 		let stall = Stalls.findOne({ number: selected._id },{ fields: { worker: 1 } });
 		if ( selected && selected.tasks && stall.worker ) {
-			let worker = stall.worker, available_tasks = [], task_skills = [], skills = {}, nexts = {}, tasks = Tasks.find({},{ sort: { type: -1, skill: 1, exp: 1 } }).fetch();
-			const player = Player.findOne({},{ fields: { energy: 1 } });
-			skills["Farming"] = Skills.findOne({ "$and": [{ name: "Farming" },{ owner: worker }] },{ fields: { amount: 1 } });
-			skills["Mining"] = Skills.findOne({ "$and": [{ name: "Mining" },{ owner: worker }] },{ fields: { amount: 1 } });
-			skills["Logging"] = Skills.findOne({ "$and": [{ name: "Logging" },{ owner: worker }] },{ fields: { amount: 1 } });
+			let worker = stall.worker, available_tasks = [], task_skills = [], skills = {}, nexts = {}, tasks = Tasks.find({},{ sort: { type: -1, skill: 1, level: 1 } }).fetch();
+			const player = Player.findOne({ _id: Meteor.userId() },{ fields: { energy: 1 } });
+			let find_skills = Skills.find({ owner: worker },{ fields: { name: 1, level: 1 } }).fetch();
+			find_skills.forEach((skill) => {
+				skills[skill.name] = skill.level;
+			});
 			tasks.forEach((task) => {
 				if ( taskInfo == task._id )
 				task.info = true;
@@ -355,7 +412,7 @@ Template.town.helpers({
 					available_tasks.push(task_push);
 				};
 				task.worker = worker;
-				if ( task.exp == 0 || ( skills[task.skill] && skills[task.skill].amount && skills[task.skill].amount >= task.exp ) ) {
+				if ( task.level == 1 || ( skills[task.skill] && skills[task.skill] >= task.level ) ) {
 					if ( task.energy && player.energy < task.energy ) {
 						task.waiting = true;
 						available_tasks.push(task);
@@ -447,17 +504,17 @@ Template.town.helpers({
 
 Template.player.helpers({
 	avatar(){
-		const player = Player.findOne({},{ fields: { avatar: 1 } });
+		const player = Player.findOne({ _id: Meteor.userId() },{ fields: { avatar: 1 } });
 		if ( player && player.avatar )
 		return player.avatar;
 	},
 	username(){
-		const player = Player.findOne({},{ fields: { username: 1 } });
+		const player = Player.findOne({ _id: Meteor.userId() },{ fields: { username: 1 } });
 		if ( player && player.username )
 		return player.username;
 	},
 	energy(){
-		const player = Player.findOne({},{ fields: { energy: 1, maxEnergy: 1 } });
+		const player = Player.findOne({ _id: Meteor.userId() },{ fields: { energy: 1, maxEnergy: 1 } });
 		const energy = ( player && player.energy ? player.energy : 0 );
 		const max = ( player && player.maxEnergy ? player.maxEnergy : 0 );
 		const width = ( energy >= 1 ? Math.ceil((energy/max)*100) : 0 );
@@ -858,7 +915,7 @@ Template.task.helpers({
 	},
 	needed(){
 		if ( this.next )
-		return "<div class='needed flex'>"+this.skill+" +"+this.exp+"</div>";
+		return "<div class='needed flex'>LVL "+this.level+"</div>";
 	},
 	next(){
 		if ( this.waiting && this.show ) {
@@ -945,9 +1002,9 @@ Template.worker.events({
 		Meteor.call('hireWorker',this._id);
 	},
 	'click .task'() {
-		const user_skill = Skills.findOne({ "$and": [{ owner: this._id },{ name: this.skill }] },{ fields: { amount: 1 } });
-		const skill_amount = ( !user_skill || !user_skill.amount ? 0 : user_skill.amount );
-		if ( skill_amount >= this.exp )
+		const user_skill = Skills.findOne({ "$and": [{ owner: this._id },{ name: this.skill }] },{ fields: { level: 1 } });
+		const skill_level = ( !user_skill || !user_skill.level ? 1 : user_skill.level );
+		if ( skill_level >= this.level )
 		Meteor.call('startTask',this._id,this.workerId);
 	}
 });
@@ -955,7 +1012,7 @@ Template.worker.events({
 Template.worker.helpers({
 	name() {
 		if ( !this.name ) {
-			const player = Player.findOne({},{ fields: { username: 1 } });
+			const player = Player.findOne({ _id: Meteor.userId() },{ fields: { username: 1 } });
 			if ( player && player.username )
 			return player.username;
 		} else {
@@ -963,7 +1020,7 @@ Template.worker.helpers({
 		};
 	},
 	avatar() {
-		const player = Player.findOne({},{ fields: { avatar: 1 } });
+		const player = Player.findOne({ _id: Meteor.userId() },{ fields: { avatar: 1 } });
 		const pic = ( player && player.avatar ? player.avatar : 1 );
 		const avatar = ( !this.avatar ? "players/avatar-"+pic : "workers/person-"+this.avatar );
 		return "<img class='avatar round-lg' src='/assets/"+avatar+".png'/>"
