@@ -17,6 +17,7 @@ import './management/main.js';
 import './map.js';
 import { SlowBuffer } from 'buffer';
 import { ENGINE_METHOD_CIPHERS, SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS, SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION } from 'constants';
+import { runInThisContext } from 'vm';
 
 UI.body.onRendered(function() {
 	Tracker.autorun(function() {
@@ -187,29 +188,24 @@ Template.stall.helpers({
 
 Template.battle.helpers({
 	battles(){
-		return Battles.find({ completed: { $exists: false } });
+		return Battles.find({ completed: { $exists: false } },{ sort: { 'logs.$.created': 1 } });
 	},
-	allys(){
-		const allys = ( !this.allys ? [] : this.allys );
-		const player = Player.findOne({ _id: Meteor.userId() },{ fields: { username: 1, avatar: 1 } });
-		allys.unshift(player)
-		return allys;
+	logs(){
+		return _.sortBy(this.logs, function(log){ return -log.created; });
+	},
+	message(){
+		const type = ( this.opponent ? "opponent" : "ally" );
+		const dead = ( this.dead ? ", killing it" : "" );
+		const message = ( !this.miss ? " doing "+(this.damage-(this.damage*this.armor))+"("+(this.damage*this.armor)+")"+" damage"+dead+"." : "." );
+		return "<div class='log "+type+"'>"+this.fighter+" "+this.action+" "+this.target+message+"</div>";
 	},
 	ally_avatar(){
-		return "<img class='avatar round-lg' src='/assets/players/avatar-"+this.avatar+".png'/>"
-	},
-	ally_name(){
-		return this.username;
+		const player = Player.findOne({ _id: this._id },{ fields: { avatar: 1 } });
+		return "<img class='avatar round-lg' src='/assets/players/avatar-"+player.avatar+".png'/>"
 	},
 	opponent_avatar(){
 		const image = this.name.replace(/\s+/g, '-').toLowerCase()+"-"+this.level;
 		return "<img class='avatar round-lg' src='/assets/mobs/"+image+".png'/>"
-	},
-	opponent_name(){
-		return this.name;
-	},
-	opponent_level(){
-		return this.level;
 	}
 });
 

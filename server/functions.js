@@ -8,7 +8,7 @@ workforceEvaluate = function () {
 };
 
 workforceAdd = function (count, city) {
-    let time_now = (new Date()).getTime();
+    const time_now = (new Date()).getTime();
     let names = [];
 	for ( let i = 1; count >= i; i++ ) {
         names.push(Fake.user().name.charAt(0)+". "+Fake.user().surname);
@@ -26,6 +26,100 @@ workforceAdd = function (count, city) {
 
 var battleTimer = [];
 startBattle = function (battle) {
+
+    fighterAttack = function (fighter) {
+        if ( !fighter.dead ) {
+            let opps = ( fighter.ally ? battle.opponents : battle.allies );
+            if ( fighter.target == "None" )
+            fighter.target = Math.floor(Math.random()*opps.length);
+
+            const random = Math.floor(Math.random()*fighter.attacks.length);
+            const attack = fighter.attacks[random];
+            fighter.attacks.splice(random,1);
+            
+            if ( opps.length >=1 ) {
+                if ( opps[fighter.target].health > 0 ) {
+                    const time_now = (new Date()).getTime();
+                    let target = opps[fighter.target];
+                    const open = ( target.open ? .05 : 0 );
+                    const chance_roll = Math.floor(Math.random()*1000)+1;
+                    const chance = 1200-(((target.stats.defense/fighter.stats.attack)-open)*1000);
+                    const type = ( fighter.ally ? "ally" : "opponent" );
+                    if ( chance_roll < chance ) {
+                        const damage = fighter.stats.attack*(attack.power/100);
+                        const armor = ( target.stats.armor/fighter.stats.attack > 1 ? 1 : target.stats.armor/fighter.stats.attack );
+                        battle_push = { created: time_now, fighter: fighter.name, action: attack.action, target: opps[fighter.target].name, damage: damage, armor: armor };
+                        const group = ( fighter.ally ? "opponents" : "allies" );
+                        battle_push[type] = true;
+                        opps[fighter.target].health = opps[fighter.target].health-(damage-(damage*armor));
+                        if ( opps[fighter.target].health <= 0 ) {
+                            opps[fighter.target].dead = true;
+                            battle_push.dead = true;
+                            try { Meteor.clearTimeout(opps[fighter.target].id) } catch(e) {};
+                            let update_query = { _id: battle._id };
+                            update_query[group+"._id"] = opps[fighter.target]._id;
+                            let update_set = {};
+                            update_set[group+".$.health"] = 0;
+                            Battles.update(update_query,{ $set: update_set },
+                            function(err, count) {
+                            });
+                            opps.splice(fighter.target,1);
+                            fighter.target = "None";
+                            let battle_update = { $push: { logs: battle_push } };
+                            // if ( opps.length <= 0 || !opps )
+                            // battle_update["$set"] = { completed: time_now };
+                            Battles.update({ _id: battle._id },battle_update,
+                            function(err, count) {
+                            });
+                        } else {
+                            let update_query = { _id: battle._id };
+                            update_query[group+"._id"] = opps[fighter.target]._id;
+                            let update_inc = {};
+                            update_inc[group+".$.health"] = -(damage-(damage*armor));
+                            Battles.update(update_query,{ $inc: update_inc },
+                            function(err, count) {
+                            });
+                            Battles.update({ _id: battle._id },{ $push: { logs: battle_push } },
+                            function(err, count) {
+                            });
+                        };
+                    } else {
+                        battle_push = { created: time_now, fighter: fighter.name, action: "missed", target: opps[fighter.target].name, miss: true };
+                        battle_push[type] = true;
+                        Battles.update({ _id: battle._id },{ $push: { logs: battle_push } });
+                    };
+                };
+            };
+
+            if ( attack.open ) {
+                fighter.open = true;
+                Meteor.setTimeout(function() {
+                    fighter.open = false;
+                }, 1000*attack.open);
+            };
+
+            Meteor.setTimeout(function() {
+                fighter.attacks.push(attack);
+            }, 1000*attack.cooldown);
+
+            battleTimer[fighter._id] = Meteor.setTimeout(function() {
+                checkAttacksLength = function () {
+                    if ( opps.length >= 1 ) {
+                        if ( fighter.attacks.length > 1 ) {
+                            fighterAttack(fighter);
+                        } else {
+                            Meteor.setTimeout(function() {
+                                checkAttacksLength();
+                            }, 500);
+                        };
+                    };
+                };
+                checkAttacksLength();
+            }, 1000*attack.time);
+        };
+    };
+
+    
     let fighters = [];
     battle.allies.forEach((ally) => {
         ally.ally = true;
@@ -35,35 +129,10 @@ startBattle = function (battle) {
         opponent.opponent = true;
         fighters.push(opponent);
     });
-    fighterAttack = function (fighter) {
-        const random = Math.floor(Math.random()*fighter.attacks.length)+1;
-        const attack = fighter.attacks[random-1];
-        fighter.attacks.splice(random-1,1);
-        if ( attack.open ) {
-            fighter.open = true;
-            Meteor.setTimeout(function() {
-                fighter.open = false;
-            }, 1000*attack.open);
-        };
-        Meteor.setTimeout(function() {
-            fighter.attacks.push(attack);
-        }, 1000*attack.cooldown);
-        battleTimer[fighter._id] = Meteor.setTimeout(function() {
-            checkAttacksLength = function () {
-                if ( fighter.attacks.length > 1 ) {
-                    fighterAttack(fighter);
-                } else {
-                    Meteor.setTimeout(function() {
-                        console.log("waiting");
-                        checkAttacksLength();
-                    }, 500);
-                };
-            };
-            checkAttacksLength();
-        }, 1000*attack.time);
-    };
+    
     fighters.forEach((fighter) => {
         try { Meteor.clearTimeout(battleTimer[fighter._id]) } catch(e) {};
+        fighter.target = "None";
         fighterAttack(fighter);
     });
 };

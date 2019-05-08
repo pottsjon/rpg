@@ -14,18 +14,19 @@ Meteor.methods({
 					started: time_now,
 					allies: [{
 						_id: this.userId,
+						name: Meteor.users.findOne({ _id: this.userId },{ fields: { username: 1 } }).username,
 						level: 1,
 						health: 100,
 						stats: {
-							attack: 10,
-							speed: 5,
+							attack: 8,
 							defense: 6,
-							armor: 5,
+							armor: 6,
 							magic_defense: 5
 						},
 						attacks: [
 							{ 
 								name: "Slash",
+								action: "slashed at",
 								time: 4,
 								cooldown: 6,
 								open: 1,
@@ -33,6 +34,7 @@ Meteor.methods({
 							},
 							{ 
 								name: "Lunge",
+								action: "lunged at",
 								time: 5,
 								cooldown: 6,
 								open: 2,
@@ -40,12 +42,14 @@ Meteor.methods({
 							},
 							{
 								name: "Jab",
+								action: "jabbed at",
 								time: 2,
 								cooldown: 4,
 								power: 50
 							},
 							{
 								name: "Thrust",
+								action: "thrusted at",
 								time: 3,
 								cooldown: 6,
 								open: 2,
@@ -57,10 +61,9 @@ Meteor.methods({
 						_id : Random.id(),
 						name: "Skeleton",
 						level: 1,
-						health: 100,
+						health: 20,
 						stats: {
-							attack: 5,
-							speed: 5,
+							attack: 8,
 							defense: 5,
 							armor: 5,
 							magic_defense: 5
@@ -68,6 +71,7 @@ Meteor.methods({
 						attacks: [
 							{ 
 								name: "Slash",
+								action: "slashed at",
 								time: 4,
 								cooldown: 6,
 								open: 1,
@@ -75,6 +79,7 @@ Meteor.methods({
 							},
 							{ 
 								name: "Lunge",
+								action: "lunged at",
 								time: 5,
 								cooldown: 6,
 								open: 2,
@@ -82,12 +87,14 @@ Meteor.methods({
 							},
 							{
 								name: "Jab",
+								action: "jabbed at",
 								time: 2,
 								cooldown: 4,
 								power: 50
 							},
 							{
 								name: "Thrust",
+								action: "thrusted at",
 								time: 3,
 								cooldown: 6,
 								open: 2,
@@ -99,10 +106,9 @@ Meteor.methods({
 						_id : Random.id(),
 						name: "Skeleton",
 						level: 1,
-						health: 100,
+						health: 20,
 						stats: {
-							attack: 5,
-							speed: 5,
+							attack: 8,
 							defense: 5,
 							armor: 5,
 							magic_defense: 5
@@ -110,6 +116,7 @@ Meteor.methods({
 						attacks: [
 							{ 
 								name: "Slash",
+								action: "slashed at",
 								time: 4,
 								cooldown: 6,
 								open: 1,
@@ -117,6 +124,7 @@ Meteor.methods({
 							},
 							{ 
 								name: "Lunge",
+								action: "lunged at",
 								time: 5,
 								cooldown: 6,
 								open: 2,
@@ -124,12 +132,14 @@ Meteor.methods({
 							},
 							{
 								name: "Jab",
+								action: "jabbed at",
 								time: 2,
 								cooldown: 4,
 								power: 50
 							},
 							{
 								name: "Thrust",
+								action: "thrusted at",
 								time: 3,
 								cooldown: 6,
 								open: 2,

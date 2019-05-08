@@ -220,17 +220,27 @@
 <template name='battle'>
   <div class="battle">
       {{#each battles}}
-        <div class="allys">
-          {{#each allys}}
-            {{{ally_avatar}}}
-            {{ally_name}}
+        <div class="allies half">
+          {{#each allies}}
+            <div class="fighter">
+              {{{ally_avatar}}}
+              {{name}}
+              Health: {{health}}
+            </div> 
+          {{/each}}
+        </div><div class="opponents half">
+          {{#each opponents}}
+            <div class="fighter">
+              {{{opponent_avatar}}}
+              Opponent: {{name}}
+              Level: {{level}}
+              Health: {{health}}
+            </div> 
           {{/each}}
         </div>
-        <div class="opponents">
-          {{#each opponents}}
-            {{{opponent_avatar}}}
-            Opponent: {{opponent_name}}
-            Level: {{opponent_level}}        
+        <div class="logs">
+          {{#each logs}}
+            {{{message}}}
           {{/each}}
         </div>
       {{/each}}
